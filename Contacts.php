@@ -1,114 +1,116 @@
 <?php
 
-class Projects {
+class Contacts {
   var $messages = array();
-  var $project = array();
-  var $projects = array();
-  var $project_types = array();
-  var $s = 'project_priority';
+  var $contact = array();
+  var $contacts = array();
+  var $contact_types = array();
+  var $s = 'contact_priority';
   var $d = 'ASC';
 
   # user, hash
-  function add_project($args){
+  function add_contact($args){
     $hash = $args['hash'];
-    if(!empty($hash['project_due_date'])){
-      $hash['project_due_date'] = date('Y-m-d',strtotime($hash['project_due_date']));
-    }else{
-      unset($hash['project_due_date']);
+    $hash['contact_created'] = date("Y-m-d H:i:s");
+    $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
+    $hash['contact_user_name'] = $user_name;
+    if(isset($hash['birthday_month'])){
+      $hash['contact_birth_date'] = sprintf("%04d-%02d-%02d", $hash['birthday_year'],$hash['birthday_month'],$hash['birthday_day']);
     }
-    if(!$hash['project_name']){
-      $this->messages[] = "You did not enter in a project name!";
+    unset($hash['birthday_month']);
+    unset($hash['birthday_day']);
+    unset($hash['birthday_year']);
+    if(!$hash['contact_first']){
+      $this->messages[] = "You did not enter in a first name!";
     } else {
-      $id = Database::insert(array('table' => 'projects', 'hash' => $hash));
-      if($id)
-        $this->messages[] = "You have successfully added a project!";
+      $id = Database::insert(array('table' => 'contacts', 'hash' => $hash));
       return $id;
     }
   }
 
   # id
-  function get_project($args){
+  function get_contact($args){
     $id = $args['id'];
     $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
     $sql = "
       SELECT p.*,
-             DATE_FORMAT(p.project_created, '%m/%e/%Y %l:%i%p')
-               AS project_created_formatted,
-             DATE_FORMAT(p.project_due_date, '%c/%e/%Y')
-               AS project_due_date_formatted2
-      FROM projects p
-      WHERE project_id = '$id'
+             DATE_FORMAT(p.contact_created, '%m/%e/%Y %l:%i%p')
+               AS contact_created_formatted,
+             DATE_FORMAT(p.contact_due_date, '%c/%e/%Y')
+               AS contact_due_date_formatted2
+      FROM contacts p
+      WHERE contact_id = '$id'
       LIMIT 1";
     $result = mysql_query($sql);
     $r = mysql_fetch_assoc($result);
     if($r){
-      $r['project_url'] = Common::get_url(array('bow' => $r['project_name'],
-                                                'id' => 'PRJ'.$r['project_id']));
-      $this->project = $r;
+      $r['contact_url'] = Common::get_url(array('bow' => $r['contact_name'],
+                                                'id' => 'PRJ'.$r['contact_id']));
+      $this->contact = $r;
     }
-    return $this->project;
+    return $this->contact;
   }
 
   # hash
-  function get_projects($args){
+  function get_contacts($args){
     $hash = $args['hash'];
     if($hash['s']){$this->s = $hash['s'];}
     if($hash['d']){$this->d = $hash['d'];}
-    $search_fields = "CONCAT_WS(' ',p.project_name)";
+    $search_fields = "CONCAT_WS(' ',p.contact_name)";
     $q = $hash['q'];
     $hash['q'] = Common::clean_search_query($q,$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
     if(isset($hash['c']) && $hash['c'] != "")
-      $if_category = "project_category = '$hash[c]' AND ";
+      $if_category = "contact_category = '$hash[c]' AND ";
     if(isset($hash['o']) && $hash['o'] != "")
-      $if_owner = "project_owner = '$hash[o]' AND ";
+      $if_owner = "contact_owner = '$hash[o]' AND ";
     if(!empty($hash['t'])){
       if($hash['t'] == 'Open'){
-        $if_status = "project_status != 'Closed' AND ";
+        $if_status = "contact_status != 'Closed' AND ";
       } else {
-        $if_status = "project_status = '$hash[t]' AND ";
+        $if_status = "contact_status = '$hash[t]' AND ";
       }
     }
-    if(array_key_exists('project_customer_id', $hash))
-      $if_customer_id = "project_customer_id = '$hash[project_customer_id]' AND ";
+    if(array_key_exists('contact_customer_id', $hash))
+      $if_customer_id = "contact_customer_id = '$hash[contact_customer_id]' AND ";
     $sql = "
       SELECT p.*,
-             DATE_FORMAT(p.project_created, '%m/%e/%Y %l:%i%p')
-               AS project_created_formatted,
-             DATE_FORMAT(p.project_due_date, '%c/%e/%Y')
-               AS project_due_date_formatted2
-      FROM projects p
+             DATE_FORMAT(p.contact_created, '%m/%e/%Y %l:%i%p')
+               AS contact_created_formatted,
+             DATE_FORMAT(p.contact_due_date, '%c/%e/%Y')
+               AS contact_due_date_formatted2
+      FROM contacts p
       WHERE ($search_fields LIKE '%$hash[q]%') AND
             $if_category
             $if_owner
             $if_status
-            project_display = '1'
+            contact_display = '1'
       ORDER BY $this->s $this->d";
     $results = mysql_query($sql);
     while ($r = mysql_fetch_assoc($results)){
-      $r['project_url'] = Common::get_url(array('bow' => $r['project_name'],
-                                                'id' => 'PRJ'.$r['project_id']));
-      $r['days_before'] = ceil((strtotime($r['project_due_date']) - time()) / 86400);
-      $projects[] = $r;
+      $r['contact_url'] = Common::get_url(array('bow' => $r['contact_name'],
+                                                'id' => 'PRJ'.$r['contact_id']));
+      $r['days_before'] = ceil((strtotime($r['contact_due_date']) - time()) / 86400);
+      $contacts[] = $r;
     }
-    if($projects)
-      $this->projects = $projects;
+    if($contacts)
+      $this->contacts = $contacts;
     $this->d = Common::direction_switch($this->d);
-    return $this->projects;
+    return $this->contacts;
   }
 
   # hash
-  function get_projects_count($args){
+  function get_contacts_count($args){
     $hash = $args['hash'];
     $search_fields = "CONCAT_WS(' ',p.PlanNum,p.Description)";
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     if(isset($hash['c']) && $hash['c'] != "")
-      $if_category = "project_category = '$hash[c]' AND ";
+      $if_category = "contact_category = '$hash[c]' AND ";
     if(isset($hash['t']) && $hash['t'] != "")
       $if_type = "PlanNum LIKE '$hash[t]-%' AND ";
-    if(array_key_exists('project_customer_id', $hash))
-      $if_customer_id = "project_customer_id = '$hash[project_customer_id]' AND ";
+    if(array_key_exists('contact_customer_id', $hash))
+      $if_customer_id = "contact_customer_id = '$hash[contact_customer_id]' AND ";
     $sql = "
       SELECT count(p.RecID)
       FROM PlansTable p
@@ -123,7 +125,7 @@ class Projects {
   }
 
   # hash
-  function get_project_types($args){
+  function get_contact_types($args){
     $hash = $args['hash'];
     $search_fields = "CONCAT_WS(' ',pt.type_name)";
     $q = $hash['q'];
@@ -132,11 +134,11 @@ class Projects {
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
     if(isset($hash['c']) && $hash['c'] != "")
       $if_scanned = "Scanned = '$hash[c]' AND ";
-    if(array_key_exists('project_customer_id', $hash))
-      $if_customer_id = "project_customer_id = '$hash[project_customer_id]' AND ";
+    if(array_key_exists('contact_customer_id', $hash))
+      $if_customer_id = "contact_customer_id = '$hash[contact_customer_id]' AND ";
     $sql = "
       SELECT pt.*
-      FROM project_types pt
+      FROM contact_types pt
       WHERE ($search_fields LIKE '%$hash[q]%') AND
             type_display = '1'
       ORDER BY type_abbreviation ASC";
@@ -145,18 +147,18 @@ class Projects {
       $items[] = $r;
     }
     if($items)
-      $this->project_types = $items;
-    return $this->project_types;
+      $this->contact_types = $items;
+    return $this->contact_types;
   }
 
-  function list_project_categories($args){
+  function list_contact_categories($args){
     $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
     $sql = "
-      SELECT DISTINCT project_category
-      FROM projects
+      SELECT DISTINCT contact_category
+      FROM contacts
       WHERE 
-            project_display = 1
-      ORDER BY project_category ASC";
+            contact_display = 1
+      ORDER BY contact_category ASC";
             #transaction_date > '$last_year_date' AND
     $results = mysql_query($sql);
     while($r = mysql_fetch_row($results)){
@@ -165,14 +167,14 @@ class Projects {
     return $categories;
   }
 
-  function list_project_owners($args){
+  function list_contact_owners($args){
     $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
     $sql = "
-      SELECT DISTINCT project_owner
-      FROM projects
+      SELECT DISTINCT contact_owner
+      FROM contacts
       WHERE
-            project_display = 1
-      ORDER BY project_owner ASC";
+            contact_display = 1
+      ORDER BY contact_owner ASC";
             #transaction_date > '$last_year_date' AND
     $results = mysql_query($sql);
     while($r = mysql_fetch_row($results)){
@@ -182,16 +184,16 @@ class Projects {
   }
 
   # id, hash
-  function update_project($args){
+  function update_contact($args){
     $id = $args['id'];
     $hash = $args['hash'];
-    if(!empty($hash['project_due_date'])){
-      $hash['project_due_date'] = date('Y-m-d',strtotime($hash['project_due_date']));
+    if(!empty($hash['contact_due_date'])){
+      $hash['contact_due_date'] = date('Y-m-d',strtotime($hash['contact_due_date']));
     }else{
-      $hash['project_due_date'] = NULL;
+      $hash['contact_due_date'] = NULL;
     }
-    $item = $this->get_project(array('id' => $id));
-    $where = "project_id = '$id'";
+    $item = $this->get_contact(array('id' => $id));
+    $where = "contact_id = '$id'";
     $update = NULL;
     foreach($hash as $k => $v){
       if($v != $item[$k] && isset($item[$k])){
@@ -203,7 +205,7 @@ class Projects {
     }
     $where = rtrim($where, ' AND ');
     $update = rtrim($update, ', ');
-    $sql = "UPDATE projects SET $update WHERE $where";
+    $sql = "UPDATE contacts SET $update WHERE $where";
     if($update)
       mysql_query($sql) or trigger_error("SQL", E_USER_ERROR);
     return $item;

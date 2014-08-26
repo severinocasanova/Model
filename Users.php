@@ -1,114 +1,109 @@
 <?php
 
-class Projects {
+class Users {
   var $messages = array();
-  var $project = array();
-  var $projects = array();
-  var $project_types = array();
-  var $s = 'project_priority';
+  var $user = array();
+  var $users = array();
+  var $user_types = array();
+  var $s = 'username';
   var $d = 'ASC';
 
   # user, hash
-  function add_project($args){
+  function add_user($args){
     $hash = $args['hash'];
-    if(!empty($hash['project_due_date'])){
-      $hash['project_due_date'] = date('Y-m-d',strtotime($hash['project_due_date']));
+    if(!empty($hash['user_due_date'])){
+      $hash['user_due_date'] = date('Y-m-d',strtotime($hash['user_due_date']));
     }else{
-      unset($hash['project_due_date']);
+      unset($hash['user_due_date']);
     }
-    if(!$hash['project_name']){
-      $this->messages[] = "You did not enter in a project name!";
+    if(!$hash['user_name']){
+      $this->messages[] = "You did not enter in a user name!";
     } else {
-      $id = Database::insert(array('table' => 'projects', 'hash' => $hash));
+      $id = Database::insert(array('table' => 'users', 'hash' => $hash));
       if($id)
-        $this->messages[] = "You have successfully added a project!";
+        $this->messages[] = "You have successfully added a user!";
       return $id;
     }
   }
 
   # id
-  function get_project($args){
+  function get_user($args){
     $id = $args['id'];
     $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
     $sql = "
       SELECT p.*,
-             DATE_FORMAT(p.project_created, '%m/%e/%Y %l:%i%p')
-               AS project_created_formatted,
-             DATE_FORMAT(p.project_due_date, '%c/%e/%Y')
-               AS project_due_date_formatted2
-      FROM projects p
-      WHERE project_id = '$id'
+             DATE_FORMAT(p.user_created, '%m/%e/%Y %l:%i%p')
+               AS user_created_formatted,
+             DATE_FORMAT(p.user_due_date, '%c/%e/%Y')
+               AS user_due_date_formatted2
+      FROM users p
+      WHERE user_id = '$id'
       LIMIT 1";
     $result = mysql_query($sql);
     $r = mysql_fetch_assoc($result);
     if($r){
-      $r['project_url'] = Common::get_url(array('bow' => $r['project_name'],
-                                                'id' => 'PRJ'.$r['project_id']));
-      $this->project = $r;
+      $r['user_url'] = Common::get_url(array('bow' => $r['user_name'],
+                                                'id' => 'PRJ'.$r['user_id']));
+      $this->user = $r;
     }
-    return $this->project;
+    return $this->user;
   }
 
   # hash
-  function get_projects($args){
+  function get_users($args){
     $hash = $args['hash'];
     if($hash['s']){$this->s = $hash['s'];}
     if($hash['d']){$this->d = $hash['d'];}
-    $search_fields = "CONCAT_WS(' ',p.project_name)";
+    $search_fields = "CONCAT_WS(' ',u.username)";
     $q = $hash['q'];
     $hash['q'] = Common::clean_search_query($q,$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
     if(isset($hash['c']) && $hash['c'] != "")
-      $if_category = "project_category = '$hash[c]' AND ";
+      $if_category = "user_category = '$hash[c]' AND ";
     if(isset($hash['o']) && $hash['o'] != "")
-      $if_owner = "project_owner = '$hash[o]' AND ";
+      $if_owner = "user_owner = '$hash[o]' AND ";
     if(!empty($hash['t'])){
       if($hash['t'] == 'Open'){
-        $if_status = "project_status != 'Closed' AND ";
+        $if_status = "user_status != 'Closed' AND ";
       } else {
-        $if_status = "project_status = '$hash[t]' AND ";
+        $if_status = "user_status = '$hash[t]' AND ";
       }
     }
-    if(array_key_exists('project_customer_id', $hash))
-      $if_customer_id = "project_customer_id = '$hash[project_customer_id]' AND ";
+    if(array_key_exists('user_customer_id', $hash))
+      $if_customer_id = "user_customer_id = '$hash[user_customer_id]' AND ";
     $sql = "
-      SELECT p.*,
-             DATE_FORMAT(p.project_created, '%m/%e/%Y %l:%i%p')
-               AS project_created_formatted,
-             DATE_FORMAT(p.project_due_date, '%c/%e/%Y')
-               AS project_due_date_formatted2
-      FROM projects p
+      SELECT u.*,
+             DATE_FORMAT(u.created, '%m/%e/%Y %l:%i%p')
+               AS user_created_formatted
+      FROM users u
       WHERE ($search_fields LIKE '%$hash[q]%') AND
             $if_category
-            $if_owner
-            $if_status
-            project_display = '1'
+            status = '1'
       ORDER BY $this->s $this->d";
     $results = mysql_query($sql);
     while ($r = mysql_fetch_assoc($results)){
-      $r['project_url'] = Common::get_url(array('bow' => $r['project_name'],
-                                                'id' => 'PRJ'.$r['project_id']));
-      $r['days_before'] = ceil((strtotime($r['project_due_date']) - time()) / 86400);
-      $projects[] = $r;
+      $r['user_url'] = Common::get_url(array('bow' => $r['user_name'],
+                                             'id' => 'U'.$r['user_id']));
+      $items[] = $r;
     }
-    if($projects)
-      $this->projects = $projects;
+    if($items)
+      $this->users = $items;
     $this->d = Common::direction_switch($this->d);
-    return $this->projects;
+    return $this->users;
   }
 
   # hash
-  function get_projects_count($args){
+  function get_users_count($args){
     $hash = $args['hash'];
     $search_fields = "CONCAT_WS(' ',p.PlanNum,p.Description)";
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     if(isset($hash['c']) && $hash['c'] != "")
-      $if_category = "project_category = '$hash[c]' AND ";
+      $if_category = "user_category = '$hash[c]' AND ";
     if(isset($hash['t']) && $hash['t'] != "")
       $if_type = "PlanNum LIKE '$hash[t]-%' AND ";
-    if(array_key_exists('project_customer_id', $hash))
-      $if_customer_id = "project_customer_id = '$hash[project_customer_id]' AND ";
+    if(array_key_exists('user_customer_id', $hash))
+      $if_customer_id = "user_customer_id = '$hash[user_customer_id]' AND ";
     $sql = "
       SELECT count(p.RecID)
       FROM PlansTable p
@@ -123,7 +118,7 @@ class Projects {
   }
 
   # hash
-  function get_project_types($args){
+  function get_user_types($args){
     $hash = $args['hash'];
     $search_fields = "CONCAT_WS(' ',pt.type_name)";
     $q = $hash['q'];
@@ -132,11 +127,11 @@ class Projects {
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
     if(isset($hash['c']) && $hash['c'] != "")
       $if_scanned = "Scanned = '$hash[c]' AND ";
-    if(array_key_exists('project_customer_id', $hash))
-      $if_customer_id = "project_customer_id = '$hash[project_customer_id]' AND ";
+    if(array_key_exists('user_customer_id', $hash))
+      $if_customer_id = "user_customer_id = '$hash[user_customer_id]' AND ";
     $sql = "
       SELECT pt.*
-      FROM project_types pt
+      FROM user_types pt
       WHERE ($search_fields LIKE '%$hash[q]%') AND
             type_display = '1'
       ORDER BY type_abbreviation ASC";
@@ -145,18 +140,18 @@ class Projects {
       $items[] = $r;
     }
     if($items)
-      $this->project_types = $items;
-    return $this->project_types;
+      $this->user_types = $items;
+    return $this->user_types;
   }
 
-  function list_project_categories($args){
+  function list_user_categories($args){
     $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
     $sql = "
-      SELECT DISTINCT project_category
-      FROM projects
+      SELECT DISTINCT user_category
+      FROM users
       WHERE 
-            project_display = 1
-      ORDER BY project_category ASC";
+            user_display = 1
+      ORDER BY user_category ASC";
             #transaction_date > '$last_year_date' AND
     $results = mysql_query($sql);
     while($r = mysql_fetch_row($results)){
@@ -165,14 +160,14 @@ class Projects {
     return $categories;
   }
 
-  function list_project_owners($args){
+  function list_user_owners($args){
     $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
     $sql = "
-      SELECT DISTINCT project_owner
-      FROM projects
+      SELECT DISTINCT user_owner
+      FROM users
       WHERE
-            project_display = 1
-      ORDER BY project_owner ASC";
+            user_display = 1
+      ORDER BY user_owner ASC";
             #transaction_date > '$last_year_date' AND
     $results = mysql_query($sql);
     while($r = mysql_fetch_row($results)){
@@ -182,16 +177,16 @@ class Projects {
   }
 
   # id, hash
-  function update_project($args){
+  function update_user($args){
     $id = $args['id'];
     $hash = $args['hash'];
-    if(!empty($hash['project_due_date'])){
-      $hash['project_due_date'] = date('Y-m-d',strtotime($hash['project_due_date']));
+    if(!empty($hash['user_due_date'])){
+      $hash['user_due_date'] = date('Y-m-d',strtotime($hash['user_due_date']));
     }else{
-      $hash['project_due_date'] = NULL;
+      $hash['user_due_date'] = NULL;
     }
-    $item = $this->get_project(array('id' => $id));
-    $where = "project_id = '$id'";
+    $item = $this->get_user(array('id' => $id));
+    $where = "user_id = '$id'";
     $update = NULL;
     foreach($hash as $k => $v){
       if($v != $item[$k] && isset($item[$k])){
@@ -203,7 +198,7 @@ class Projects {
     }
     $where = rtrim($where, ' AND ');
     $update = rtrim($update, ', ');
-    $sql = "UPDATE projects SET $update WHERE $where";
+    $sql = "UPDATE users SET $update WHERE $where";
     if($update)
       mysql_query($sql) or trigger_error("SQL", E_USER_ERROR);
     return $item;
