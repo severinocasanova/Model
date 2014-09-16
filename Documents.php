@@ -45,15 +45,12 @@ class Documents {
   # id
   function get_document($args){
     $id = $args['id'];
-    $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
     $sql = "
-      SELECT d.*, p.*,
+      SELECT d.*, 
              DATE_FORMAT(d.document_created, '%b %e, %Y')
                AS document_created_formatted
       FROM documents d
-      LEFT JOIN projects p ON (d.document_project_id = p.project_id)
-      WHERE document_id = '$id' AND
-            document_display = '1'
+      WHERE document_id = '$id'
       LIMIT 1";
     $result = mysql_query($sql);
     $r = mysql_fetch_assoc($result);
@@ -76,15 +73,19 @@ class Documents {
     if($hash['document_project_id'])
       $hash['c'] = $hash['document_project_id'];
     if($hash['c'])
-      $if_document_project_id = "document_project_id = '".$hash['c']."' AND";
+      $if_document_project_id = "document_project_id = '".$hash['c']."' AND ";
+    if($hash['document_table']){
+      $if_document_table = "document_table = '".$hash['document_table']."' AND ";
+      $if_document_table .= "document_table_id = '".$hash['document_table_id']."' AND ";
+    }
     $sql = "
-      SELECT d.*,p.*,
+      SELECT d.*,
              DATE_FORMAT(d.document_created, '%m/%e/%Y %l:%i%p')
               AS document_created_formatted
       FROM documents d
-      LEFT JOIN projects p ON (d.document_project_id = p.project_id)
       WHERE ($search_fields LIKE '%$hash[q]%') AND
             $if_document_project_id
+            $if_document_table
             document_display = '1'
       ORDER BY document_created DESC
       $limit";
