@@ -19,8 +19,6 @@ class Documents {
       $this->messages[] = "You did not enter in a document name!";
     }elseif(!$hash['document_filename']){
       $this->messages[] = "You did not select a document!";
-    }elseif(!$hash['document_description']){
-      $this->messages[] = "You did not enter in a document description!";
     }elseif(!$args['location']){
       $this->messages[] = "The server admin has not set the location variable!";
     }else {

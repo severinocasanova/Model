@@ -9,7 +9,7 @@ class PSS {
   var $pss = array();
   var $psss = array();
   var $townships = array();
-  var $s = 'PSImageID';
+  var $s = 'pss_number';
   var $d = 'ASC';
 
   # user, hash
@@ -33,7 +33,7 @@ class PSS {
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT Rng
-      FROM PSSTable pss
+      FROM psss pss
       WHERE ($search_fields LIKE '%$hash[q]%')
       GROUP BY Rng
       ORDER BY Rng ASC";
@@ -53,7 +53,7 @@ class PSS {
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT Sec
-      FROM PSSTable pss
+      FROM psss pss
       WHERE ($search_fields LIKE '%$hash[q]%')
       GROUP BY Sec
       ORDER BY Sec ASC";
@@ -69,32 +69,30 @@ class PSS {
   # id
   function get_pss($args){
     $id = $args['id'];
-    $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
+    #$user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
     $sql = "
-      SELECT pss.*,
-             pt.Description as PlanDescription,
-             pt.RecID as PlanRecID,
-             DATE_FORMAT(pss.PlanDate, '%c/%e/%Y')
-               AS pss_plan_date_formatted
-      FROM PSSTable pss
-      LEFT JOIN PlansTable pt ON (pss.RefPlanNumbers = pt.PlanNum)
-      WHERE pss.RecID = '$id'
+      SELECT pss.*, p.plan_id, p.plan_description,
+             DATE_FORMAT(pss.pss_plan_date, '%c/%e/%Y')
+               AS pss_plan_date_formatted2
+      FROM psss pss
+      LEFT JOIN plans p ON (pss.pss_RefPlanNumbers = p.plan_number)
+      WHERE pss.pss_id = '$id'
       LIMIT 1";
     $result = mysql_query($sql);
     $r = mysql_fetch_assoc($result);
     if($r){
-      $r['pss_url'] = Common::get_url(array('bow' => $r['Description'],
-                                            'id' => 'PSS'.$r['RecID']));
-      $r['plan_url'] = Common::get_url(array('bow' => $r['PlanDescription'],
-                                             'id' => 'PL'.$r['PlanRecID']));
+      $r['pss_url'] = Common::get_url(array('bow' => $r['pss_description'],
+                                            'id' => 'PSS'.$r['pss_id']));
+      $r['plan_url'] = Common::get_url(array('bow' => $r['plan_description'],
+                                             'id' => 'PL'.$r['plan_id']));
       #/images/Plan_Lib/2007/GR/GR-2007-146/GR-2007-146_001.tif
       #$r['files'] = array('file1.tif');
       #$path = $_SERVER['DOCUMENT_ROOT'].'maps-and-records/webroot/images/Plan_Lib/2013/H/H-2013-001/';
-      preg_match("/^(\w+)-/i",$r['PlanNum'],$matches);
+      preg_match("/^(\w+)-/i",$r['pss_number'],$matches);
       $tp = ($matches[1] ? $matches[1] : '');
-      preg_match("/\w+-(\d+)-/i",$r['PlanNum'],$matches);
+      preg_match("/\w+-(\d+)-/i",$r['pss_number'],$matches);
       $yr = ($matches[1] ? $matches[1] : '0000');
-      $path = '/maps-and-records/webroot/images/Plan_Lib/'.$yr.'/'.$tp.'/'.$r['PlanNum'].'/';
+      $path = '/maps-and-records/webroot/images/Plan_Lib/PSImages/'.$r['pss_number'].'/';
       if($handle = opendir($_SERVER['DOCUMENT_ROOT'].$path)){
         while (false !== ($filename = readdir($handle))){
           if(preg_match("/\.tiff?/i",$filename)){
@@ -116,31 +114,33 @@ class PSS {
     $hash = $args['hash'];
     if($hash['s']){$this->s = $hash['s'];}
     if($hash['d']){$this->d = $hash['d'];}
-    $search_fields = "CONCAT_WS(' ',pss.PSImageID,pss.Description,pss.TEPlanIDNum)";
+    $search_fields = "CONCAT_WS(' ',pss.pss_number,pss.pss_description,pss.pss_TEPlanIDNum)";
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
     if(isset($hash['c']) && $hash['c'] != "")
-      $if_scanned = "PSSScanned = '$hash[c]' AND ";
+      $if_scanned = "pss_scanned = '$hash[c]' AND ";
     $sql = "
       SELECT pss.*, 
-             pt.Description as PlanDescription,
-             pt.RecID as PlanRecID,
-             DATE_FORMAT(pss.PlanDate, '%c/%e/%Y')
+             p.plan_description,
+             p.plan_id,
+             DATE_FORMAT(pss.pss_plan_date, '%c/%e/%Y')
                AS pss_plan_date_formatted
-      FROM PSSTable pss
-      LEFT JOIN PlansTable pt ON (pss.RefPlanNumbers = pt.PlanNum)
+      FROM psss pss
+      LEFT JOIN plans p ON (pss.pss_RefPlanNumbers = p.plan_number)
       WHERE ($search_fields LIKE '%$hash[q]%') AND
             $if_scanned
-            pss.RecID IS NOT NULL
+            pss_display = '1'
       ORDER BY $this->s $this->d
       $offset";
     $results = mysql_query($sql);
     while ($r = mysql_fetch_assoc($results)){
-      $r['pss_url'] = Common::get_url(array('bow' => $r['Description'],
-                                           'id' => 'PSS'.$r['RecID']));
-      $r['plan_url'] = Common::get_url(array('bow' => $r['PlanDescription'],
-                                             'id' => 'PL'.$r['PlanRecID']));
+      $r['pss_url'] = Common::get_url(array('bow' => $r['pss_description'],
+                                           'id' => 'PSS'.$r['pss_id']));
+      if($r['plan_id']){
+        $r['plan_url'] = Common::get_url(array('bow' => $r['plan_description'],
+                                               'id' => 'PL'.$r['plan_id']));
+      }
       $psss[] = $r;
     }
     if($psss)
@@ -152,16 +152,16 @@ class PSS {
   # hash
   function get_psss_count($args){
     $hash = $args['hash'];
-    $search_fields = "CONCAT_WS(' ',pss.PSImageID,pss.Description,pss.TEPlanIDNum)";
+    $search_fields = "CONCAT_WS(' ',pss.pss_number,pss.pss_description,pss.pss_TEPlanIDNum)";
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     if(isset($hash['c']) && $hash['c'] != "")
       $if_scanned = "PSSScanned = '$hash[c]' AND ";
     $sql = "
-      SELECT count(pss.RecID)
-      FROM PSSTable pss
+      SELECT count(pss.pss_id)
+      FROM psss pss
       WHERE ($search_fields LIKE '%$hash[q]%') AND
             $if_scanned
-            RecID IS NOT NULL";
+            pss_display = '1'";
     $results = mysql_query($sql);
     $matched = mysql_fetch_row($results);
     return $matched[0];

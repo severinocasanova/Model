@@ -15,11 +15,10 @@ class AD {
   # user, hash
   function add_ad($args){
     $hash = $args['hash'];
-    $hash['ad_due_date'] = date('Y-m-d',strtotime($hash['ad_due_date']));
-    if(!$hash['ad_customer_id']){
-      $this->messages[] = "You did not enter in a customer!";
+    if(!$hash['ad_number']){
+      $this->messages[] = "You did not enter in an AD #!";
     } else {
-      $id = database::insert(array('table' => 'ads', 'hash' => $hash));
+      $id = Database::insert(array('table' => 'ads', 'hash' => $hash));
       if($id)
         $this->messages[] = "You have successfully added an ad!";
       return $id;
@@ -46,11 +45,11 @@ class AD {
       #/images/Plan_Lib/2007/GR/GR-2007-146/GR-2007-146_001.tif
       #$r['files'] = array('file1.tif');
       #$path = $_SERVER['DOCUMENT_ROOT'].'maps-and-records/webroot/images/Plan_Lib/2013/H/H-2013-001/';
-      preg_match("/^(\w+)-/i",$r['ad_plan_number'],$matches);
+      preg_match("/^(\w+)-/i",$r['ad_number'],$matches);
       $tp = ($matches[1] ? $matches[1] : '');
-      preg_match("/\w+-(\d+)-/i",$r['ad_plan_number'],$matches);
+      preg_match("/\w+-(\d+)-/i",$r['ad_number'],$matches);
       $yr = ($matches[1] ? $matches[1] : '0000');
-      $path = '/maps-and-records/webroot/images/Plan_Lib/'.$yr.'/'.$tp.'/'.$r['ad_plan_number'].'/';
+      $path = '/maps-and-records/webroot/images/Plan_Lib/AD/'.$r['ad_number'].'/';
       if($handle = opendir($_SERVER['DOCUMENT_ROOT'].$path)){
         while (false !== ($filename = readdir($handle))){
           if(preg_match("/\.tiff?/i",$filename)){

@@ -6,20 +6,45 @@ class Plans {
   var $plan = array();
   var $plans = array();
   var $plan_types = array();
-  var $s = 'plan_number';
+  var $s = 'plan_sort,plan_number';
   var $d = 'ASC';
 
   # user, hash
   function add_plan($args){
     $hash = $args['hash'];
+    $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
+    $hash['plan_added_by'] = $user_name;
     if(!$hash['plan_number']){
       $this->messages[] = "You did not enter in a plan number!";
     } else {
       $id = Database::insert(array('table' => 'plans', 'hash' => $hash));
-      if($id)
+      if($id){
         $this->messages[] = "You have successfully added a plan!";
-      return $id;
+        return $id;
+      }
     }
+  }
+
+  # id
+  function get_next_plan($args){
+    $plan_type = $args['plan_type'].'-'.date("Y").'-';
+    $sql = "
+      SELECT p.plan_number
+      FROM plans p
+      WHERE plan_number LIKE '$plan_type%'
+      ORDER BY plan_number DESC
+      LIMIT 1";
+    $result = mysql_query($sql);
+    $r = mysql_fetch_assoc($result);
+    if($r){
+      $last_number = preg_replace("/".$args['plan_type']."-".date("Y")."-0*/","",$r['plan_number']);
+      $new_last_number = sprintf("%03d",$last_number+1);
+      $plan_number = $args['plan_type'].'-'.date("Y").'-'.$new_last_number;
+    }
+    if(!$last_number){
+      $plan_number = $args['plan_type'].'-'.date("Y").'-001';
+    }
+    return $plan_number;
   }
 
   # id
@@ -44,13 +69,22 @@ class Plans {
       preg_match("/\w+-(\d+)-/i",$r['plan_number'],$matches);
       $yr = ($matches[1] ? $matches[1] : '0000');
       $paths = array('/maps-and-records/webroot/images/Plan_Lib/'.$tp.'/'.$r['plan_number'].'/',
+                     '/maps-and-records/webroot/images/Plan_Lib/0000/'.$tp.'/'.$r['plan_number'].'/',
+                     '/maps-and-records/webroot/images/Plan_Lib/0100/'.$tp.'/'.$r['plan_number'].'/',
+                     '/maps-and-records/webroot/images/Plan_Lib/0200/'.$tp.'/'.$r['plan_number'].'/',
+                     '/maps-and-records/webroot/images/Plan_Lib/0300/'.$tp.'/'.$r['plan_number'].'/',
+                     '/maps-and-records/webroot/images/Plan_Lib/0400/'.$tp.'/'.$r['plan_number'].'/',
+                     '/maps-and-records/webroot/images/Plan_Lib/0500/'.$tp.'/'.$r['plan_number'].'/',
+                     '/maps-and-records/webroot/images/Plan_Lib/0600/'.$tp.'/'.$r['plan_number'].'/',
+                     '/maps-and-records/webroot/images/Plan_Lib/0700/'.$tp.'/'.$r['plan_number'].'/',
+                     '/maps-and-records/webroot/images/Plan_Lib/0800/'.$tp.'/'.$r['plan_number'].'/',
                      '/maps-and-records/webroot/images/Plan_Lib/'.$yr.'/'.$tp.'/'.$r['plan_number'].'/',
                      '/maps-and-records/webroot/images/Plan_Lib/19'.$yr.'/'.$tp.'/'.$r['plan_number'].'/');
       foreach ($paths as $path){
       if($handle = opendir($_SERVER['DOCUMENT_ROOT'].$path)){
         while (false !== ($filename = readdir($handle))){
           if(preg_match("/\.tiff?/i",$filename)){
-            $files[] = array('filename' => $filename,
+            $files[$filename] = array('filename' => $filename,
                              'url' => $path.$filename);
           }
         }

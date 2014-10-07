@@ -15,11 +15,10 @@ class RS {
   # user, hash
   function add_rs($args){
     $hash = $args['hash'];
-    $hash['rs_due_date'] = date('Y-m-d',strtotime($hash['rs_due_date']));
-    if(!$hash['rs_customer_id']){
-      $this->messages[] = "You did not enter in a customer!";
+    if(!$hash['rs_number']){
+      $this->messages[] = "You did not enter in an RS #!";
     } else {
-      $id = database::insert(array('table' => 'rss', 'hash' => $hash));
+      $id = Database::insert(array('table' => 'rss', 'hash' => $hash));
       if($id)
         $this->messages[] = "You have successfully added an rs!";
       return $id;
@@ -123,11 +122,11 @@ class RS {
       #/images/Plan_Lib/2007/GR/GR-2007-146/GR-2007-146_001.tif
       #$r['files'] = array('file1.tif');
       #$path = $_SERVER['DOCUMENT_ROOT'].'maps-and-records/webroot/images/Plan_Lib/2013/H/H-2013-001/';
-      preg_match("/^(\w+)-/i",$r['rs_plan_number'],$matches);
+      preg_match("/^(\w+)-/i",$r['rs_number'],$matches);
       $tp = ($matches[1] ? $matches[1] : '');
-      preg_match("/\w+-(\d+)-/i",$r['rs_plan_number'],$matches);
+      preg_match("/\w+-(\d+)-/i",$r['rs_number'],$matches);
       $yr = ($matches[1] ? $matches[1] : '0000');
-      $path = '/maps-and-records/webroot/images/Plan_Lib/'.$yr.'/'.$tp.'/'.$r['rs_plan_number'].'/';
+      $path = '/maps-and-records/webroot/images/Plan_Lib/RS/'.$yr.'/'.$r['rs_number'].'/';
       if($handle = opendir($_SERVER['DOCUMENT_ROOT'].$path)){
         while (false !== ($filename = readdir($handle))){
           if(preg_match("/\.tiff?/i",$filename)){
@@ -151,7 +150,7 @@ class RS {
     if($hash['d']){$this->d = $hash['d'];}
     $search_fields = "CONCAT_WS(' ',rs.rs_number,rs.rs_description,rs.rs_plan_number)";
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
-    $ipp = (isset($args['ipp']) ? $args['ipp'] : "250");
+    $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
     if(isset($hash['b']) && $hash['b'] != "")
       $if_book = "rs_book = '$hash[b]' AND ";
@@ -220,7 +219,7 @@ class RS {
   # hash
   function get_townships($args){
     $hash = $args['hash'];
-    $search_fields = "CONCAT_WS(' ',rs.TwnShp)";
+    $search_fields = "CONCAT_WS(' ',rs.rs_township)";
     $q = $hash['q'];
     $hash['q'] = Common::clean_search_query($q,$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
@@ -230,11 +229,11 @@ class RS {
     if(array_key_exists('plan_customer_id', $hash))
       $if_customer_id = "plan_customer_id = '$hash[plan_customer_id]' AND ";
     $sql = "
-      SELECT DISTINCT TwnShp
+      SELECT DISTINCT rs_township
       FROM rss rs
       WHERE ($search_fields LIKE '%$hash[q]%')
-      GROUP BY TwnShp
-      ORDER BY TwnShp ASC";
+      GROUP BY rs_township
+      ORDER BY rs_township ASC";
     $results = mysql_query($sql);
     while ($r = mysql_fetch_assoc($results)){
       $items[] = $r;

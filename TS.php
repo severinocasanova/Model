@@ -7,15 +7,15 @@ class TS {
   var $ts = array();
   var $tss = array();
   var $townships = array();
-  var $s = 'TSNum';
-  var $d = 'ASC';
+  var $s = 'ts_id';
+  var $d = 'DESC';
 
   # user, hash
   function add_ts($args){
     $hash = $args['hash'];
     $hash['ts_due_date'] = date('Y-m-d',strtotime($hash['ts_due_date']));
-    if(!$hash['ts_customer_id']){
-      $this->messages[] = "You did not enter in a customer!";
+    if(!$hash['ts_number']){
+      $this->messages[] = "You did not enter in a TS #!";
     } else {
       $id = database::insert(array('table' => 'tss', 'hash' => $hash));
       if($id)
@@ -28,9 +28,9 @@ class TS {
   function get_streets_ew($args){
     $hash = $args['hash'];
     $sql = "
-      SELECT DISTINCT EWStr
-      FROM TSTable ts
-      ORDER BY EWStr ASC";
+      SELECT DISTINCT ts_EW_street
+      FROM tss ts
+      ORDER BY ts_EW_street ASC";
     $results = mysql_query($sql);
     while ($r = mysql_fetch_assoc($results)){
       $items[] = $r;
@@ -44,9 +44,9 @@ class TS {
   function get_streets_ns($args){
     $hash = $args['hash'];
     $sql = "
-      SELECT DISTINCT NSStr
-      FROM TSTable ts
-      ORDER BY NSStr ASC";
+      SELECT DISTINCT ts_NS_street
+      FROM tss ts
+      ORDER BY ts_NS_street ASC";
     $results = mysql_query($sql);
     while ($r = mysql_fetch_assoc($results)){
       $items[] = $r;
@@ -59,25 +59,28 @@ class TS {
   # id
   function get_ts($args){
     $id = $args['id'];
-    $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
     $sql = "
-      SELECT ts.*
-      FROM TSTable ts
-      WHERE RecID = '$id'
+      SELECT ts.*,p.plan_id,p.plan_description,
+             CONCAT(ts.ts_type,'-',LPAD(ts.ts_system_id,4,'0')) as ts_number_id
+      FROM tss ts
+      LEFT JOIN plans p ON (p.plan_number = ts.ts_plan_number)
+      WHERE ts_id = '$id'
       LIMIT 1";
     $result = mysql_query($sql);
     $r = mysql_fetch_assoc($result);
     if($r){
-      $r['ts_url'] = Common::get_url(array('bow' => $r['EWStr'].'-'.$r['NSStr'],
-                                           'id' => 'TS'.$r['RecID']));
+      $r['ts_url'] = Common::get_url(array('bow' => $r['ts_EW_street'].'-'.$r['ts_NS_street'],
+                                           'id' => 'TS'.$r['ts_id']));
+      $r['plan_url'] = Common::get_url(array('bow' => $r['plan_description'],
+                                             'id' => 'PL'.$r['plan_id']));
       #/images/Plan_Lib/2007/GR/GR-2007-146/GR-2007-146_001.tif
       #$r['files'] = array('file1.tif');
       #$path = $_SERVER['DOCUMENT_ROOT'].'maps-and-records/webroot/images/Plan_Lib/2013/H/H-2013-001/';
-      preg_match("/^(\w+)-/i",$r['TSNum'],$matches);
+      preg_match("/^(\w+)-/i",$r['ts_image_id'],$matches);
       $tp = ($matches[1] ? $matches[1] : '');
-      preg_match("/\w+-(\d+)-/i",$r['TSNum'],$matches);
+      preg_match("/\w+-(\d+)-/i",$r['ts_image_id'],$matches);
       $yr = ($matches[1] ? $matches[1] : '0000');
-      $path = '/maps-and-records/webroot/images/Plan_Lib/TSImage/'.$r['TSNum'].'/';
+      $path = '/maps-and-records/webroot/images/Plan_Lib/TSImage/'.$r['ts_image_id'].'/';
       if($handle = opendir($_SERVER['DOCUMENT_ROOT'].$path)){
         while (false !== ($filename = readdir($handle))){
           if(preg_match("/\.tiff?/i",$filename)){
@@ -99,27 +102,39 @@ class TS {
     $hash = $args['hash'];
     if($hash['s']){$this->s = $hash['s'];}
     if($hash['d']){$this->d = $hash['d'];}
-    $search_fields = "CONCAT_WS(' ',ts.TSNum,ts.PlanNum,ts.EWStr,ts.NSStr,ts.Comments)";
+    $search_fields = "CONCAT_WS(' ',ts.ts_number,CONCAT(ts.ts_type,'-',LPAD(ts.ts_system_id,4,'0')),ts.ts_plan_number,ts.ts_EW_street,ts.ts_NS_street,ts.ts_comments)";
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
     if(isset($hash['ew']) && $hash['ew'] != "")
-      $if_ew = "EWStr = '$hash[ew]' AND ";
+      $if_ew = "ts_EW_street = '$hash[ew]' AND ";
     if(isset($hash['ns']) && $hash['ns'] != "")
-      $if_ns = "NSStr = '$hash[ns]' AND ";
+      $if_ns = "ts_NS_street = '$hash[ns]' AND ";
+ #CONCAT(ts_type,'-',IF(LENGTH(ts_system_id)=4,ts_system_id),IF(LENGTH(ts_system_id)=3,'0',ts_system_id),IF(LENGTH(ts_system_id)=2,'00',ts_system_id),IF(LENGTH(ts_system_id)=1,'000',ts_system_id,'0000')) AS ts_number_id
+ #CONCAT(ts_type,'-', CASE WHEN LENGTH(ts_system_id)=4 THEN ts_system_id 
+ #                    ELSE WHEN LENGTH(ts_system_id)=3 THEN CONCAT('0',ts_system_id) END) AS ts_number_id
+      #LEFT JOIN plans pl ON (CONCAT(ts.ts_type,'-',LPAD(ts.ts_system_id,4,'0')) = pl.plan_number)
     $sql = "
-      SELECT ts.*
-      FROM TSTable ts
+      SELECT ts.*,p.plan_id,p.plan_description,
+             CONCAT(ts.ts_type,'-',LPAD(ts.ts_system_id,4,'0')) as ts_number_id
+      FROM tss ts
+      LEFT JOIN plans p ON (p.plan_number = ts.ts_plan_number)
       WHERE ($search_fields LIKE '%$hash[q]%') AND
             $if_ew
             $if_ns
-            RecID IS NOT NULL
+            ts_display = '1'
       ORDER BY $this->s $this->d
       $offset";
     $results = mysql_query($sql);
     while ($r = mysql_fetch_assoc($results)){
-      $r['ts_url'] = Common::get_url(array('bow' => $r['EWStr'].'-'.$r['NSStr'],
-                                           'id' => 'TS'.$r['RecID']));
+      $r['ts_url'] = Common::get_url(array('bow' => $r['ts_EW_street'].'-'.$r['ts_NS_street'],
+                                           'id' => 'TS'.$r['ts_id']));
+      if($r['plan_id']){
+        $r['plan_url'] = Common::get_url(array('bow' => $r['plan_description'],
+                                               'id' => 'PL'.$r['plan_id']));
+      }
+      #$r['ts_number_id_plan_url'] = Common::get_url(array('bow' => $r['plan_description2'],
+      #                                       'id' => 'PL'.$r['plan_id2']));
       $tss[] = $r;
     }
     if($tss)
@@ -131,19 +146,19 @@ class TS {
   # hash
   function get_tss_count($args){
     $hash = $args['hash'];
-    $search_fields = "CONCAT_WS(' ',ts.TSNum,ts.PlanNum,ts.EWStr,ts.NSStr,ts.Comments)";
+    $search_fields = "CONCAT_WS(' ',ts.ts_number,ts.ts_plan_number,ts.ts_EW_street,ts.ts_NS_street,ts.ts_comments)";
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     if(isset($hash['ew']) && $hash['ew'] != "")
-      $if_ew = "EWStr = '$hash[ew]' AND ";
+      $if_ew = "ts_EW_street = '$hash[ew]' AND ";
     if(isset($hash['ns']) && $hash['ns'] != "")
-      $if_ns = "NSStr = '$hash[ns]' AND ";
+      $if_ns = "ts_NS_street = '$hash[ns]' AND ";
     $sql = "
-      SELECT count(ts.RecID)
-      FROM TSTable ts
+      SELECT count(ts.ts_id)
+      FROM tss ts
       WHERE ($search_fields LIKE '%$hash[q]%') AND
             $if_ew
             $if_ns
-            RecID IS NOT NULL";
+            ts_display = '1'";
     $results = mysql_query($sql);
     $matched = mysql_fetch_row($results);
     return $matched[0];

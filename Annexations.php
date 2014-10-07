@@ -123,10 +123,14 @@ class Annexations {
     if($r){
       $r['annexation_url'] = Common::get_url(array('bow' => $r['annexation_description'],
                                                    'id' => 'ANX'.$r['annexation_id']));
-      $r['plan_url'] = Common::get_url(array('bow' => $r['plan_description'],
-                                             'id' => 'PL'.$r['plan_id']));
-      $r['smp_url'] = Common::get_url(array('bow' => $r['smp_description'],
-                                            'id' => 'SMP'.$r['smp_id']));
+      if($r['plan_id']){
+        $r['plan_url'] = Common::get_url(array('bow' => $r['plan_description'],
+                                               'id' => 'PL'.$r['plan_id']));
+      }
+      if($r['smp_id']){
+        $r['smp_url'] = Common::get_url(array('bow' => $r['smp_description'],
+                                              'id' => 'SMP'.$r['smp_id']));
+      }
       $this->annexation = $r;
     }
     return $this->annexation;

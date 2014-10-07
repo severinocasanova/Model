@@ -15,9 +15,8 @@ class MS {
   # user, hash
   function add_ms($args){
     $hash = $args['hash'];
-    $hash['ms_due_date'] = date('Y-m-d',strtotime($hash['ms_due_date']));
-    if(!$hash['ms_customer_id']){
-      $this->messages[] = "You did not enter in a customer!";
+    if(!$hash['ms_number']){
+      $this->messages[] = "You did not enter in an MS #!";
     } else {
       $id = database::insert(array('table' => 'mss', 'hash' => $hash));
       if($id)
@@ -123,11 +122,11 @@ class MS {
       #/images/Plan_Lib/2007/GR/GR-2007-146/GR-2007-146_001.tif
       #$r['files'] = array('file1.tif');
       #$path = $_SERVER['DOCUMENT_ROOT'].'maps-and-records/webroot/images/Plan_Lib/2013/H/H-2013-001/';
-      preg_match("/^(\w+)-/i",$r['ms_plan_number'],$matches);
+      preg_match("/^(\w+)-/i",$r['ms_number'],$matches);
       $tp = ($matches[1] ? $matches[1] : '');
-      preg_match("/\w+-(\d+)-/i",$r['ms_plan_number'],$matches);
+      preg_match("/\w+-(\d+)-/i",$r['ms_number'],$matches);
       $yr = ($matches[1] ? $matches[1] : '0000');
-      $path = '/maps-and-records/webroot/images/Plan_Lib/'.$yr.'/'.$tp.'/'.$r['ms_plan_number'].'/';
+      $path = '/maps-and-records/webroot/images/Plan_Lib/MS/'.$yr.'/'.$r['ms_number'].'/';
       if($handle = opendir($_SERVER['DOCUMENT_ROOT'].$path)){
         while (false !== ($filename = readdir($handle))){
           if(preg_match("/\.tiff?/i",$filename)){
