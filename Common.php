@@ -106,9 +106,9 @@ class Common {
                    'V' => '/vehicles/',
                    'W' => '/wishes/',
                    'WC' => '/wedding/costs/');
-    $type = preg_replace('/\d+/','', $args[id]);
-    $bow_characters = 150-strlen('http://severinocasanova.com')-strlen($types{$type})-strlen($args[id])-1;
-    $bow = strtolower($args[bow]);
+    $type = preg_replace('/\d+/','', $args['id']);
+    $bow_characters = 150-strlen('http://severinocasanova.com')-strlen($types{$type})-strlen($args['id'])-1;
+    $bow = strtolower($args['bow']);
     $bow = preg_replace('/\s+/','-', $bow);
     $bow = preg_replace('/[^\w-\/]/','', $bow);
     $useless_words = array('a','an','of','the','in','with','fuck','shit',
@@ -123,7 +123,7 @@ class Common {
         $bow = $last_space[1];
       }
     }
-    $url = $types[$type].$bow.'/'.$args[id];
+    $url = $types[$type].$bow.'/'.$args['id'];
     $url = preg_replace('/(-\/|\/-)/','/', $url);
     return $url;
   }

@@ -49,18 +49,18 @@ class Projecthistory {
 
   function get_project_history_entries($args){
     $hash = $args['hash'];
-    if($hash['s']){$this->sort = $hash['s'];}
-    if($hash['d']){$this->direction = $hash['d'];}
+    $this->d = (isset($hash['d']) ? $hash['d']:$this->d);
+    $this->s = (isset($hash['s']) ? $hash['s']:$this->s);
+    $limit = '';
+    $hash['l'] = (isset($hash['l']) ? $hash['l']:'');
     if($hash['l']){$this->limit = $hash['l'];$limit = 'LIMIT '.$this->limit;}
     $search_fields = "CONCAT_WS(' ',ph.project_history_title,ph.project_history_content)";
-    $q = $hash['q'];
-    $hash['q'] = Common::clean_search_query($q,$search_fields);
-    if($hash['project_history_project_id'])
-      $hash['p'] = $hash['project_history_project_id'];
-    if($hash['p'])
-      $if_project_history_project_id = "project_history_project_id = '".$hash['p']."' AND";
-    if($hash['u'])
-      $if_username = "project_history_user_name = '".$hash['u']."' AND";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
+    $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
+    $hash['p'] = (isset($hash['project_history_project_id']) ? $hash['project_history_project_id']:'');
+    $if_project_history_project_id = ($hash['p'] ? "project_history_project_id = '".$hash['p']."' AND ":'');
+    $hash['u'] = (isset($hash['u']) ? $hash['u']:'');
+    $if_username = ($hash['u'] ? "project_history_user_name = '".$hash['u']."' AND ":'');
     $sql = "
       SELECT ph.*,p.*,
              DATE_FORMAT(ph.project_history_created, '%m/%e/%Y %l:%i%p')
@@ -73,7 +73,7 @@ class Projecthistory {
             $if_project_history_project_id
             $if_username
             project_history_display = '1'
-      ORDER BY project_history_created DESC
+      ORDER BY project_history_date DESC
       $limit";
     $results = mysql_query($sql);
     while($r = mysql_fetch_assoc($results)){
@@ -90,24 +90,30 @@ class Projecthistory {
   function update_project_history($args){
     $id = $args['id'];
     $hash = $args['hash'];
+    $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
     $hash['project_history_date'] = date('Y-m-d',strtotime($hash['project_history_date']));
     $item = $this->get_project_history(array('id' => $id));
     $where = "project_history_id = '$id'";
     $update = NULL;
-    foreach($hash as $k => $v){
-      if($v != $item[$k] && isset($item[$k])){
-        $new_value = mysql_real_escape_string($v);
-        $update .= "$k = '$new_value', ";
-        $item[$k] = $v;
-        $this->messages[] = "You have successfully updated the $k!";
+    if($user_name == $item['project_history_user_name']){
+      foreach($hash as $k => $v){
+        if($v != $item[$k] && isset($item[$k])){
+          $new_value = mysql_real_escape_string($v);
+          $update .= "$k = '$new_value', ";
+          $item[$k] = $v;
+          $this->messages[] = "You have successfully updated the $k!";
+        }
       }
+      $where = rtrim($where, ' AND ');
+      $update = rtrim($update, ', ');
+      $sql = "UPDATE project_history SET $update WHERE $where";
+    }else{
+      $this->messages[] = "You do not have permission to edit this entry!";
     }
-    $where = rtrim($where, ' AND ');
-    $update = rtrim($update, ', ');
-    $sql = "UPDATE project_history SET $update WHERE $where";
-    if($update)
+    if($update){
       mysql_query($sql) or trigger_error("SQL", E_USER_ERROR);
-    return $item;
+      return $item;
+    }
   }
 
 }

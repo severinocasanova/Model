@@ -51,18 +51,17 @@ class Projects {
 
   # hash
   function get_projects($args){
-    $hash = $args['hash'];
-    if($hash['s']){$this->s = $hash['s'];}
-    if($hash['d']){$this->d = $hash['d'];}
+    $hash = (isset($args['hash']) ? $args['hash']:'');
+    $this->d = (isset($hash['d']) ? $hash['d']:$this->d);
+    $this->s = (isset($hash['s']) ? $hash['s']:$this->s);
     $search_fields = "CONCAT_WS(' ',p.project_name)";
-    $q = $hash['q'];
-    $hash['q'] = Common::clean_search_query($q,$search_fields);
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
+    $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
-    if(isset($hash['c']) && $hash['c'] != "")
-      $if_category = "project_category = '$hash[c]' AND ";
-    if(isset($hash['o']) && $hash['o'] != "")
-      $if_owner = "project_owner = '$hash[o]' AND ";
+    $if_category = ((isset($hash['c']) && $hash['c'] != "") ? "project_category = '$hash[c]' AND ":'');
+    $if_owner = ((isset($hash['o']) && $hash['o'] != "") ? "project_owner = '$hash[o]' AND ":'');
+    $if_status = '';
     if(!empty($hash['t'])){
       if($hash['t'] == 'Open'){
         $if_status = "project_status != 'Closed' AND ";
@@ -150,7 +149,8 @@ class Projects {
   }
 
   function list_project_categories($args){
-    $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
+    $args['user']['user_name'] = (isset($args['user']['user_name']) ? $args['user']['user_name']:'');
+    $user_name = (isset($args['user_name']) ? $args['user_name'] : $args['user']['user_name']);
     $sql = "
       SELECT DISTINCT project_category
       FROM projects
@@ -166,7 +166,8 @@ class Projects {
   }
 
   function list_project_owners($args){
-    $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
+    $args['user']['user_name'] = (isset($args['user']['user_name']) ? $args['user']['user_name']:'');
+    $user_name = (isset($args['user_name']) ? $args['user_name'] : $args['user']['user_name']);
     $sql = "
       SELECT DISTINCT project_owner
       FROM projects
@@ -187,14 +188,20 @@ class Projects {
     $hash = $args['hash'];
     if(!empty($hash['project_due_date'])){
       $hash['project_due_date'] = date('Y-m-d',strtotime($hash['project_due_date']));
+      print "DATE:".$hash['project_due_date'];
     }else{
       $hash['project_due_date'] = NULL;
+    }
+    if($hash['project_task_status'] == 'Closed'){
+      $hash['project_task_closed'] = date("Y-m-d H:i:s");
+    }else{
+      $hash['project_task_closed'] = NULL;
     }
     $item = $this->get_project(array('id' => $id));
     $where = "project_id = '$id'";
     $update = NULL;
     foreach($hash as $k => $v){
-      if($v != $item[$k] && isset($item[$k])){
+      if($v != $item[$k] && array_key_exists($k, $item)){
         $new_value = mysql_real_escape_string($v);
         $update .= (is_null($v) ? "$k = NULL," : "$k = '$new_value', ");
         $item[$k] = $v;

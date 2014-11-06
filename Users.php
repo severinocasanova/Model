@@ -51,18 +51,16 @@ class Users {
 
   # hash
   function get_users($args){
-    $hash = $args['hash'];
-    if($hash['s']){$this->s = $hash['s'];}
-    if($hash['d']){$this->d = $hash['d'];}
+    $hash = (isset($args['hash']) ? $args['hash']:'');
+    $this->d = (isset($hash['d']) ? $hash['d']:$this->d);
+    $this->s = (isset($hash['s']) ? $hash['s']:$this->s);
     $search_fields = "CONCAT_WS(' ',u.username)";
-    $q = $hash['q'];
-    $hash['q'] = Common::clean_search_query($q,$search_fields);
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
+    $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
-    if(isset($hash['c']) && $hash['c'] != "")
-      $if_category = "user_category = '$hash[c]' AND ";
-    if(isset($hash['o']) && $hash['o'] != "")
-      $if_owner = "user_owner = '$hash[o]' AND ";
+    $if_category = ((isset($hash['c']) && $hash['c'] != "") ? "user_category = '$hash[c]' AND ":'');
+    $if_owner = ((isset($hash['o']) && $hash['o'] != "") ? "user_owner = '$hash[o]' AND ":'');
     if(!empty($hash['t'])){
       if($hash['t'] == 'Open'){
         $if_status = "user_status != 'Closed' AND ";
@@ -83,8 +81,10 @@ class Users {
       ORDER BY $this->s $this->d";
     $results = mysql_query($sql);
     while ($r = mysql_fetch_assoc($results)){
-      $r['user_url'] = Common::get_url(array('bow' => $r['user_name'],
-                                             'id' => 'U'.$r['user_id']));
+      #$r['user_url'] = Common::get_url(array('bow' => $r['user_name'],
+      #                                       'id' => 'U'.$r['user_id']));
+      $r['user_url'] = Common::get_url(array('bow' => $r['username'],
+                                             'id' => 'U'.$r['id']));
       $items[] = $r;
     }
     if($items)

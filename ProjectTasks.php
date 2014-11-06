@@ -28,11 +28,11 @@ class ProjectTasks {
     $id = $args['id'];
     $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
     $sql = "
-      SELECT d.*, p.*,
-             DATE_FORMAT(d.project_task_created, '%b %e, %Y')
-               AS project_task_created_formatted
-      FROM project_tasks d
-      LEFT JOIN projects p ON (d.project_task_project_id = p.project_id)
+      SELECT pt.*, p.*,
+             DATE_FORMAT(pt.project_task_created, '%c/%e/%Y %l:%i%p')
+              AS project_task_created_formatted
+      FROM project_tasks pt
+      LEFT JOIN projects p ON (pt.project_task_project_id = p.project_id)
       WHERE project_task_id = '$id' AND
             project_task_display = '1'
       LIMIT 1";
@@ -58,14 +58,27 @@ class ProjectTasks {
       $hash['c'] = $hash['project_task_project_id'];
     if($hash['c'])
       $if_project_task_project_id = "project_task_project_id = '".$hash['c']."' AND";
+    if(!empty($hash['t'])){
+      if($hash['t'] == 'Open'){
+        $if_status = "project_task_status != 'Closed' AND ";
+      } else {
+        $if_status = "project_task_status = '$hash[t]' AND ";
+      }
+    }
+    if(isset($hash['u']) && $hash['u'] != "")
+      $if_owner = "project_task_owner = '$hash[u]' AND ";
     $sql = "
       SELECT pt.*,p.*,
-             DATE_FORMAT(pt.project_task_created, '%m/%e/%Y %l:%i%p')
-              AS project_task_created_formatted
+             DATE_FORMAT(pt.project_task_created, '%c/%e/%Y %l:%i%p')
+              AS project_task_created_formatted2,
+             DATE_FORMAT(pt.project_task_closed, '%c/%e/%Y %l:%i%p')
+              AS project_task_closed_formatted2
       FROM project_tasks pt
       LEFT JOIN projects p ON (pt.project_task_project_id = p.project_id)
       WHERE ($search_fields LIKE '%$hash[q]%') AND
             $if_project_task_project_id
+            $if_status
+            $if_owner
             project_task_display = '1'
       ORDER BY project_task_created DESC
       $limit";
@@ -89,10 +102,15 @@ class ProjectTasks {
     $item = $this->get_project_task(array('id' => $id));
     $where = "project_task_id = '$id'";
     $update = NULL;
+    if($hash['project_task_status'] == 'Closed'){
+      $hash['project_task_closed'] = date("Y-m-d H:i:s");
+    }else{
+      $hash['project_task_closed'] = NULL;
+    }
     foreach($hash as $k => $v){
-      if($v != $item[$k] && isset($item[$k])){
+      if($v != $item[$k] && array_key_exists($k, $item)){
         $new_value = mysql_real_escape_string($v);
-        $update .= "$k = '$new_value', ";
+        $update .= (is_null($v) ? "$k = NULL," : "$k = '$new_value', ");
         $item[$k] = $v;
         $this->messages[] = "You have successfully updated the $k!";
       }

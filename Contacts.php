@@ -8,6 +8,8 @@ class Contacts {
   var $contact_phone_numbers = array();
   var $contact_screen_names = array();
   var $contacts = array();
+  var $d = 'ASC';
+  var $s = 'contact_name';
 
   # user, hash
   function add_contact($args){
@@ -257,14 +259,16 @@ class Contacts {
   # hash
   function get_contacts($args){
     $hash = $args['hash'];
-    $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
+    $this->d = (isset($hash['d']) ? $hash['d']:$this->d);
+    $this->s = (isset($hash['s']) ? $hash['s']:$this->s);
+    $args['user']['user_name'] = (isset($args['user']['user_name']) ? $args['user']['user_name']:'');
+    $user_name = (isset($args['user_name']) ? $args['user_name'] : $args['user']['user_name']);
     $search_fields = "CONCAT_WS(' ',c.contact_first,c.contact_last,c.contact_organization,c.contact_notes,a.address_address,a.address_city,pn.phone_areacode,pn.phone_three,pn.phone_four)";
     #$search_fields = "CONCAT_WS(' ',c.contact_first,c.contact_last,c.contact_organization)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
-    if($hash['t'])
-      $if_type = "contact_type = '$hash[t]' AND ";
-    if(!$hash['offset'])
-      $hash['offset'] = 0;
+    $if_type = (isset($hash['t']) ? "contact_type = '$hash[t]' AND ":'');
+    $hash['offset'] = (isset($hash['offset']) ? $hash['offset']:'0');
     $sql = "
       SELECT c.*, CONCAT(contact_last,contact_first) AS contact_name,
              a.*,
@@ -276,10 +280,10 @@ class Contacts {
       LEFT JOIN phone_numbers pn ON (c.contact_id = pn.phone_contact_id AND pn.phone_primary = '1' AND pn.phone_display = '1')
       WHERE ($search_fields LIKE '%$hash[q]%') AND
             $if_type 
-            contact_user_name = '$user_name' AND
             contact_display = '1'
-      ORDER BY contact_name ASC
+      ORDER BY $this->s $this->d
       LIMIT $hash[offset],100";
+            #contact_user_name = '$user_name' AND
       #LEFT OUTER JOIN addresses a ON (c.contact_id = a.address_contact_id)
       #LEFT OUTER JOIN screen_names sn ON (c.contact_id = sn.screen_contact_id)
     $result = mysql_query($sql);
@@ -290,6 +294,7 @@ class Contacts {
     }
     if($contacts)
       $this->contacts = $contacts;
+    $this->d = Common::direction_switch($this->d);
     return $this->contacts;
   }
 
