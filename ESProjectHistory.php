@@ -12,36 +12,33 @@ class ESProjecthistory {
   # hash, user
   function add_esproject_history($args){
     $hash = $args['hash'];
-    $hash['esproject_history_user_name'] = $args['user']['user_name'];
-    $hash['esproject_history_date'] = date('Y-m-d',strtotime($hash['esproject_history_date']));
-    if(!$hash['esproject_history_title']){
-      $this->messages[] = "You did not enter in any esproject history!";
+    $hash['AddDate'] = date('Y-m-d',time());
+    if(!$hash['Date']){
+      $this->messages[] = "You did not enter in anything for the Date field!";
     } else {
-      $id = Database::insert(array('table' => 'esproject_history', 'hash' => $hash));
-      if($id)
-        $this->messages[] = "You have successfully added esproject history!";
-      return $id;
+      $id = Database::insert(array('table' => 'PWCIP_Status', 'hash' => $hash));
+      if($id){
+        $this->messages[] = "You have successfully added project history!";
+        return $id;
+      }
     }
   }
 
   # id
   function get_esproject_history($args){
     $id = $args['id'];
-    $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
     $sql = "
       SELECT ph.*,
-             DATE_FORMAT(ph.esproject_history_created, '%m/%e/%Y %l:%i%p')
-               AS esproject_history_created_formatted,
-             DATE_FORMAT(ph.esproject_history_date, '%c/%e/%Y')
-               AS esproject_history_date_formatted2
-      FROM esproject_history ph
+             DATE_FORMAT(ph.AddDate, '%m/%e/%Y')
+               AS AddDate_formatted2
+      FROM PWCIP_Status ph
       WHERE esproject_history_id = '$id'
       LIMIT 1";
     $result = mysql_query($sql);
     $r = mysql_fetch_assoc($result);
     if($r){
-      $r['esproject_history_url'] = Common::get_url(array('bow' => $r['esproject_history_title'],
-                                                        'id' => 'PH'.$r['esproject_history_id']));
+      #$r['esproject_history_url'] = Common::get_url(array('bow' => $r['esproject_history_title'],
+      #                                                 'id' => 'PH'.$r['esproject_history_id']));
       $this->esproject_history = $r;
     }
     return $this->esproject_history;
@@ -52,33 +49,29 @@ class ESProjecthistory {
     if($hash['s']){$this->sort = $hash['s'];}
     if($hash['d']){$this->direction = $hash['d'];}
     if($hash['l']){$this->limit = $hash['l'];$limit = 'LIMIT '.$this->limit;}
-    $search_fields = "CONCAT_WS(' ',ph.esproject_history_title,ph.esproject_history_content)";
+    $search_fields = "CONCAT_WS(' ',ph.Date,ph.Status)";
     $q = $hash['q'];
     $hash['q'] = Common::clean_search_query($q,$search_fields);
-    if($hash['esproject_history_esproject_id'])
-      $hash['p'] = $hash['esproject_history_esproject_id'];
+    if($hash['esproject_id'])
+      $hash['p'] = $hash['esproject_id'];
     if($hash['p'])
-      $if_esproject_history_esproject_id = "esproject_history_esproject_id = '".$hash['p']."' AND";
+      $if_esproject_id = "ph.esproject_id = '".$hash['p']."' AND";
     if($hash['u'])
       $if_username = "esproject_history_user_name = '".$hash['u']."' AND";
     $sql = "
-      SELECT ph.*,p.*,
-             DATE_FORMAT(ph.esproject_history_created, '%m/%e/%Y %l:%i%p')
-              AS esproject_history_created_formatted,
-             DATE_FORMAT(ph.esproject_history_date, '%c/%e/%Y')
-               AS esproject_history_date_formatted2
-      FROM esproject_history ph
-      LEFT JOIN esprojects p ON (ph.esproject_history_esproject_id = p.esproject_id)
+      SELECT ph.*,ph.Status as StatusStatus,
+             DATE_FORMAT(ph.AddDate, '%c/%e/%Y')
+               AS AddDate_formatted2
+      FROM PWCIP_Status ph
       WHERE ($search_fields LIKE '%$hash[q]%') AND
-            $if_esproject_history_esproject_id
-            $if_username
-            esproject_history_display = '1'
-      ORDER BY esproject_created DESC
+            $if_esproject_id
+            ph.esproject_history_display = '1'
+      ORDER BY ph.Ordinal DESC
       $limit";
     $results = mysql_query($sql);
     while($r = mysql_fetch_assoc($results)){
       $r['esproject_url'] = Common::get_url(array('bow' => $r['esproject_name'],
-                                                'id' => 'PRJ'.$r['esproject_id']));
+                                                  'id' => 'PRJ'.$r['esproject_id']));
       $items[] = $r;
     }
     if($items)
@@ -90,21 +83,21 @@ class ESProjecthistory {
   function update_esproject_history($args){
     $id = $args['id'];
     $hash = $args['hash'];
-    $hash['esproject_history_date'] = date('Y-m-d',strtotime($hash['esproject_history_date']));
+    $hash['AddDate'] = date('Y-m-d H:i:s',strtotime($hash['AddDate']));
     $item = $this->get_esproject_history(array('id' => $id));
     $where = "esproject_history_id = '$id'";
     $update = NULL;
     foreach($hash as $k => $v){
-      if($v != $item[$k] && isset($item[$k])){
+      if($v != $item[$k] && array_key_exists($k, $item)){
         $new_value = mysql_real_escape_string($v);
-        $update .= "$k = '$new_value', ";
+        $update .= (is_null($v) ? "$k = NULL," : "$k = '$new_value', ");
         $item[$k] = $v;
         $this->messages[] = "You have successfully updated the $k!";
       }
     }
     $where = rtrim($where, ' AND ');
     $update = rtrim($update, ', ');
-    $sql = "UPDATE esproject_history SET $update WHERE $where";
+    $sql = "UPDATE PWCIP_Status SET $update WHERE $where";
     if($update)
       mysql_query($sql) or trigger_error("SQL", E_USER_ERROR);
     return $item;
