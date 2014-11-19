@@ -105,6 +105,7 @@ class Common {
                    'RQ' => '/requests/',
                    'RS' => '/rs/',
                    'RSV' => '/rs-viewer/',
+                   'SID' => '/submissions/',
                    'SMP' => '/smp/',
                    'SMPV' => '/smp-viewer/',
                    'TK' => '/trak/',
