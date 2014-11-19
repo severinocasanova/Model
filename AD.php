@@ -40,6 +40,8 @@ class AD {
     if($r){
       $r['ad_url'] = Common::get_url(array('bow' => $r['ad_description'],
                                             'id' => 'AD'.$r['ad_id']));
+      $r['ad_viewer_url'] = Common::get_url(array('bow' => $r['ad_description'],
+                                            'id' => 'ADV'.$r['ad_id']));
       $r['plan_url'] = Common::get_url(array('bow' => $r['plan_description'],
                                              'id' => 'PL'.$r['plan_id']));
       #/images/Plan_Lib/2007/GR/GR-2007-146/GR-2007-146_001.tif

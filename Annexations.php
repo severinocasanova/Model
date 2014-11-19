@@ -15,13 +15,13 @@ class Annexations {
   # user, hash
   function add_annexation($args){
     $hash = $args['hash'];
-    $hash['annexation_due_date'] = date('Y-m-d',strtotime($hash['annexation_due_date']));
-    if(!$hash['annexation_customer_id']){
-      $this->messages[] = "You did not enter in a customer!";
+    $hash['annexation_effective_date'] = date('Y-m-d',strtotime($hash['annexation_due_date']));
+    if(!$hash['annexation_map_index']){
+      $this->messages[] = "You did not enter in a map index!";
     } else {
-      $id = database::insert(array('table' => 'annexations', 'hash' => $hash));
+      $id = Database::insert(array('table' => 'annexations', 'hash' => $hash));
       if($id)
-        $this->messages[] = "You have successfully added an annexation!";
+        $this->messages[] = "You have successfully added an annexation record!";
       return $id;
     }
   }
@@ -141,7 +141,7 @@ class Annexations {
     $hash = $args['hash'];
     if($hash['s']){$this->s = $hash['s'];}
     if($hash['d']){$this->d = $hash['d'];}
-    $search_fields = "CONCAT_WS(' ',a.annexation_map_index,a.annexation_description,a.annexation_plan_number)";
+    $search_fields = "CONCAT_WS(' ',a.annexation_map_index,a.annexation_description,a.annexation_plan_number,a.annexation_effective_date,a.annexation_order_number)";
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
@@ -195,7 +195,7 @@ class Annexations {
   # hash
   function get_annexations_count($args){
     $hash = $args['hash'];
-    $search_fields = "CONCAT_WS(' ',a.annexation_map_index,a.annexation_description,a.annexation_plan_number)";
+    $search_fields = "CONCAT_WS(' ',a.annexation_map_index,a.annexation_description,a.annexation_plan_number,a.annexation_effective_date,a.annexation_order_number)";
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     if(isset($hash['b']) && $hash['b'] != "")
       $if_book = "annexation_book = '$hash[b]' AND ";

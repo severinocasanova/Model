@@ -140,6 +140,8 @@ class FB {
     if($r){
       $r['fb_url'] = Common::get_url(array('bow' => $r['fb_description'],
                                            'id' => 'FB'.$r['fb_id']));
+      $r['fb_viewer_url'] = Common::get_url(array('bow' => $r['fb_description'],
+                                           'id' => 'FBV'.$r['fb_id']));
       $path = '/maps-and-records/webroot/images/Survey/FieldBook/'.$r['fb_book'].'/';
       if($handle = opendir($_SERVER['DOCUMENT_ROOT'].$path)){
         while (false !== ($filename = readdir($handle))){

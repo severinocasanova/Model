@@ -109,17 +109,24 @@ class SMP {
   # id
   function get_smp($args){
     $id = $args['id'];
-    $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
+    if(preg_match('/^\d+$/',$id)){
+      $where = "WHERE smp_id = '$id' ";
+    } else {
+      $where = "WHERE smp_number = '$id' ";
+    }
     $sql = "
       SELECT smp.*
       FROM smps smp
-      WHERE smp_id = '$id'
+      $where AND
+        smp_display = '1'
       LIMIT 1";
     $result = mysql_query($sql);
     $r = mysql_fetch_assoc($result);
     if($r){
       $r['smp_url'] = Common::get_url(array('bow' => $r['smp_description'],
                                             'id' => 'SMP'.$r['smp_id']));
+      $r['smp_viewer_url'] = Common::get_url(array('bow' => $r['smp_description'],
+                                                   'id' => 'SMPV'.$r['smp_id']));
       #/images/Plan_Lib/2007/GR/GR-2007-146/GR-2007-146_001.tif
       #$r['files'] = array('file1.tif');
       #$path = $_SERVER['DOCUMENT_ROOT'].'maps-and-records/webroot/images/Plan_Lib/2013/H/H-2013-001/';
@@ -130,7 +137,7 @@ class SMP {
       $path = '/maps-and-records/webroot/images/Plan_Lib/'.$tp.'/'.$yr.'/'.$r['smp_number'].'/';
       if($handle = opendir($_SERVER['DOCUMENT_ROOT'].$path)){
         while (false !== ($filename = readdir($handle))){
-          if(preg_match("/\.tiff?/i",$filename)){
+          if(preg_match("/(\.jpg|\.gif|\.tiff?|\.png)/i",$filename)){
             $files[] = array('filename' => $filename,
                              'url' => $path.$filename);
           }

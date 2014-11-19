@@ -119,6 +119,8 @@ class MS {
     if($r){
       $r['ms_url'] = Common::get_url(array('bow' => $r['ms_description'],
                                             'id' => 'MS'.$r['ms_id']));
+      $r['ms_viewer_url'] = Common::get_url(array('bow' => $r['ms_description'],
+                                            'id' => 'MSV'.$r['ms_id']));
       #/images/Plan_Lib/2007/GR/GR-2007-146/GR-2007-146_001.tif
       #$r['files'] = array('file1.tif');
       #$path = $_SERVER['DOCUMENT_ROOT'].'maps-and-records/webroot/images/Plan_Lib/2013/H/H-2013-001/';

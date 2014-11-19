@@ -108,17 +108,24 @@ class RS {
   # id
   function get_rs($args){
     $id = $args['id'];
-    $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
+    if(preg_match('/^\d+$/',$id)){
+      $where = "WHERE rs_id = '$id' ";
+    } else {
+      $where = "WHERE rs_number = '$id' ";
+    }
     $sql = "
       SELECT rs.*
       FROM rss rs
-      WHERE rs_id = '$id'
+      $where AND
+        rs_display = '1'
       LIMIT 1";
     $result = mysql_query($sql);
     $r = mysql_fetch_assoc($result);
     if($r){
       $r['rs_url'] = Common::get_url(array('bow' => $r['rs_description'],
                                             'id' => 'RS'.$r['rs_id']));
+      $r['rs_viewer_url'] = Common::get_url(array('bow' => $r['rs_description'],
+                                            'id' => 'RSV'.$r['rs_id']));
       #/images/Plan_Lib/2007/GR/GR-2007-146/GR-2007-146_001.tif
       #$r['files'] = array('file1.tif');
       #$path = $_SERVER['DOCUMENT_ROOT'].'maps-and-records/webroot/images/Plan_Lib/2013/H/H-2013-001/';

@@ -59,18 +59,26 @@ class TS {
   # id
   function get_ts($args){
     $id = $args['id'];
+    if(preg_match('/^\d+$/',$id)){
+      $where = "WHERE ts_id = '$id' ";
+    } else {
+      $where = "WHERE ts_number = '$id' ";
+    }
     $sql = "
       SELECT ts.*,p.plan_id,p.plan_description,
              CONCAT(ts.ts_type,'-',LPAD(ts.ts_system_id,4,'0')) as ts_number_id
       FROM tss ts
       LEFT JOIN plans p ON (p.plan_number = ts.ts_plan_number)
-      WHERE ts_id = '$id'
+      $where AND
+        ts_display = '1'
       LIMIT 1";
     $result = mysql_query($sql);
     $r = mysql_fetch_assoc($result);
     if($r){
       $r['ts_url'] = Common::get_url(array('bow' => $r['ts_EW_street'].'-'.$r['ts_NS_street'],
                                            'id' => 'TS'.$r['ts_id']));
+      $r['ts_viewer_url'] = Common::get_url(array('bow' => $r['ts_EW_street'].'-'.$r['ts_NS_street'],
+                                           'id' => 'TSV'.$r['ts_id']));
       $r['plan_url'] = Common::get_url(array('bow' => $r['plan_description'],
                                              'id' => 'PL'.$r['plan_id']));
       #/images/Plan_Lib/2007/GR/GR-2007-146/GR-2007-146_001.tif

@@ -50,17 +50,25 @@ class Plans {
   # id
   function get_plan($args){
     $id = $args['id'];
+    if(preg_match('/^\d+$/',$id)){
+      $where = "WHERE plan_id = '$id' ";
+    } else {
+      $where = "WHERE plan_number = '$id' ";
+    }
     $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
     $sql = "
       SELECT p.*
       FROM plans p
-      WHERE plan_id = '$id'
+      $where AND
+        plan_display = '1'
       LIMIT 1";
     $result = mysql_query($sql);
     $r = mysql_fetch_assoc($result);
     if($r){
       $r['plan_url'] = Common::get_url(array('bow' => $r['plan_description'],
                                              'id' => 'PL'.$r['plan_id']));
+      $r['plan_viewer_url'] = Common::get_url(array('bow' => $r['plan_description'],
+                                             'id' => 'PLV'.$r['plan_id']));
       #/images/Plan_Lib/2007/GR/GR-2007-146/GR-2007-146_001.tif
       #$r['files'] = array('file1.tif');
       #$path = $_SERVER['DOCUMENT_ROOT'].'maps-and-records/webroot/images/Plan_Lib/2013/H/H-2013-001/';

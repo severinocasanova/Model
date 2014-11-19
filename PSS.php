@@ -10,20 +10,41 @@ class PSS {
   var $psss = array();
   var $townships = array();
   var $s = 'pss_number';
-  var $d = 'ASC';
+  var $d = 'DESC';
 
   # user, hash
-  function pssd_pss($args){
+  function add_pss($args){
     $hash = $args['hash'];
-    $hash['pss_due_date'] = date('Y-m-d',strtotime($hash['pss_due_date']));
-    if(!$hash['pss_customer_id']){
-      $this->messages[] = "You did not enter in a customer!";
+    if(!$hash['pss_direction']){
+      $this->messages[] = "You did not enter in a direction!";
     } else {
-      $id = database::insert(array('table' => 'psss', 'hash' => $hash));
+      $id = Database::insert(array('table' => 'psss', 'hash' => $hash));
       if($id)
-        $this->messages[] = "You have successfully pssded an pss!";
+        $this->messages[] = "You have successfully added a pss record!";
       return $id;
     }
+  }
+
+  # id
+  function get_next_plan($args){
+    $pss_plan_type = $args['pss_plan_type'].'-';
+    $sql = "
+      SELECT pss.pss_number
+      FROM psss pss
+      WHERE pss_number LIKE '$pss_plan_type%'
+      ORDER BY pss_number DESC
+      LIMIT 1";
+    $result = mysql_query($sql);
+    $r = mysql_fetch_assoc($result);
+    if($r){
+      $last_number = preg_replace("/".$args['pss_plan_type']."-0*/","",$r['pss_number']);
+      $new_last_number = sprintf("%04d",$last_number+1);
+      $pss_number = $args['pss_plan_type'].'-'.$new_last_number;
+    }
+    if(!$last_number){
+      $pss_number = 'ERROR:'.date(time());
+    }
+    return $pss_number;
   }
 
   # hash
@@ -70,19 +91,27 @@ class PSS {
   function get_pss($args){
     $id = $args['id'];
     #$user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
+    if(preg_match('/^\d+$/',$id)){
+      $where = "WHERE pss.pss_id = '$id' ";
+    } else {
+      $where = "WHERE pss.pss_number = '$id' ";
+    }
     $sql = "
       SELECT pss.*, p.plan_id, p.plan_description,
              DATE_FORMAT(pss.pss_plan_date, '%c/%e/%Y')
                AS pss_plan_date_formatted2
       FROM psss pss
       LEFT JOIN plans p ON (pss.pss_RefPlanNumbers = p.plan_number)
-      WHERE pss.pss_id = '$id'
+      $where AND
+        pss.pss_display = '1'
       LIMIT 1";
     $result = mysql_query($sql);
     $r = mysql_fetch_assoc($result);
     if($r){
       $r['pss_url'] = Common::get_url(array('bow' => $r['pss_description'],
                                             'id' => 'PSS'.$r['pss_id']));
+      $r['pss_viewer_url'] = Common::get_url(array('bow' => $r['pss_description'],
+                                            'id' => 'PSSV'.$r['pss_id']));
       $r['plan_url'] = Common::get_url(array('bow' => $r['plan_description'],
                                              'id' => 'PL'.$r['plan_id']));
       #/images/Plan_Lib/2007/GR/GR-2007-146/GR-2007-146_001.tif
