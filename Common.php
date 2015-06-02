@@ -75,6 +75,8 @@ class Common {
                    'BL' => '/bills/',
                    'C' => '/calendar/',
                    'CL' => '/clients/',
+                   'CNRN' => '/concerns/',
+                   'COMP' => '/complaints/',
                    'CT' => '/contacts/',
                    'CU' => '/customers/',
                    'D' => '/deals/',
@@ -147,6 +149,14 @@ class Common {
                                '$title',
                                '$comment')";
     mysql_query($sql) or die('Error: '. mysql_error());
+  }
+
+  function send_email($from, $to, $subject, $body) {
+    $Email = new CakeEmail();
+    $Email->from($from);
+    $Email->to($to);
+    $Email->subject($subject);
+    $Email->send($body);
   }
 
 }
