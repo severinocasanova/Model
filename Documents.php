@@ -17,7 +17,7 @@ class Documents {
     $destination = $args['location'].$hash['document_filename'];
     if(!$hash['document_name']){
       $this->messages[] = "You did not enter in a document name!";
-    }elseif(!$hash['tmp_name']){
+    }elseif(!$hash['document_filename']){
       $this->messages[] = "You did not select a document!";
     }elseif(!$args['location']){
       $this->messages[] = "The server admin has not set the location variable!";
