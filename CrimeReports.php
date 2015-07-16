@@ -85,19 +85,31 @@ class CrimeReports extends AppModel {
     $hash['report_date'] = date('dmY');
     $hash['rep_num'] = $id;
     $hash['ip_addr'] = $_SERVER['REMOTE_ADDR'];
-    if($hash['crime_from_time_ampm'] == 'pm') $hash['crime_from_time_hour'] += 12;
+    if($hash['crime_from_time_ampm'] == 'AM' && $hash['crime_to_time_hour'] == '12') $hash['crime_from_time_hour'] -= 12;
+    if($hash['crime_from_time_ampm'] == 'PM' && $hash['crime_from_time_hour'] != '12') $hash['crime_from_time_hour'] += 12;
     $hash['crime_from_time'] = sprintf("%02d", $hash['crime_from_time_hour']).$hash['crime_from_time_min'];
     if($hash['crime_from_time'] == 0) $hash['crime_from_time'] = '';
-    if($hash['crime_to_time_ampm'] == 'pm') $hash['crime_to_time_hour'] += 12;
+    if($hash['crime_to_time_ampm'] == 'AM' && $hash['crime_to_time_hour'] == '12') $hash['crime_to_time_hour'] -= 12;
+    if($hash['crime_to_time_ampm'] == 'PM' && $hash['crime_to_time_hour'] != '12') $hash['crime_to_time_hour'] += 12;
     $hash['crime_to_time'] = sprintf("%02d", $hash['crime_to_time_hour']).$hash['crime_to_time_min'];
     if($hash['crime_to_time'] == 0) $hash['crime_to_time'] = '';
     #if($_POST['SUS_HEIGHT_IN'] < 10) $_POST['SUS_HEIGHT_IN'] = '0' . $_POST['SUS_HEIGHT_IN'];
-    $hash['sus_height'] = ($hash['sus_height_in'] + $hash['sus_height_ft'] > 0 ? sprintf("%02d", $hash['sus_height_ft']).$hash['sus_height_in']:'');
-    $phone_numbers = array('vic_home_phone','vic_work_phone','vic_cell_phone');
-    foreach($phone_numbers as $i){
-      if(preg_match('/^(\d{3})(\d{4})$/', $hash[$i],  $matches )){
-        $hash[$i] = $matches[1].'-'.$matches[2];
+    $hash['sus_height'] = ($hash['sus_height_in'] + $hash['sus_height_ft'] > 0 ? $hash['sus_height_ft'].sprintf("%02d", $hash['sus_height_in']):'');
+    $phone_numbers = array('vic_home_phone' => 'Victim Home Phone',
+                           'vic_work_phone' => 'Victim Work Phone',
+                           'vic_cell_phone' => 'Victim Cell Phone',
+                           'rep_home_phone' => 'Reporter Home Phone',
+                           'rep_work_phone' => 'Reporter Work Phone',
+                           'rep_cell_phone' => 'Reporter Cell Home',
+                           'wit_home_phone' => 'Witness Home Phone',
+                           'wit_work_phone' => 'Witness Work Phone',
+                           'wit_cell_phone' => 'Witness Cell Phone');
+    foreach($phone_numbers as $k => $v){
+      if(preg_match('/^(\d{3})(\d{4})$/', $hash[$k],  $matches )){
+        $hash[$k] = $matches[1].'-'.$matches[2];
       }
+      #if(!preg_match('/^\d{3}-\d{4}$/', $hash[$k])){
+      #}
     }
     # setting these defaults to Y will send the report straight into I/LEADS
     $hash['rec_reviewed'] = (isset($hash['rec_reviewed']) ? $hash['rec_reviewed'] : 'Y');
@@ -107,8 +119,26 @@ class CrimeReports extends AppModel {
       $this->messages[] = "You did not enter in a crime type!"; 
     }elseif(!$hash['crime_from_date']){
       $this->messages[] = "You did not enter in a correctly formatted date for when the crime occurred!"; 
+    }elseif(!preg_match("/\/(19|20)\d{2}$/",$hash['crime_from_date'])){
+      $this->messages[] = "You did not enter in a correctly formatted date for when the crime occurred!"; 
     }elseif(!$hash['bus_vic_name'] && !$hash['vic_last_name'] && !$hash['vic_first_name']){
       $this->messages[] = "You did not enter in all the required victim information!"; 
+    }elseif($hash['vic_email'] && !preg_match('/^[a-zA-Z0-9_\.]+@[a-zA-Z0-9\-]+\.[a-zA-Z0-9\-\.]+$/', $hash['vic_email'])){
+      $this->messages[] = 'You did not fill in a valid victim email address!'; 
+    }elseif($hash['vic_dob'] && !preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $hash['vic_dob'])){
+      $this->messages[] = 'You did not fill in a valid victim date of birth!'; 
+    }elseif(!preg_match('/^\d{3}-\d{4}$/', $hash['vic_home_phone'])){
+      $this->messages[] = 'You did not fill in a valid victim home phone number!'; 
+    }elseif($hash['vic_work_phone'] && !preg_match('/^\d{3}-\d{4}$/', $hash['vic_work_phone'])){
+      $this->messages[] = 'You did not fill in a valid victim work phone number!'; 
+    }elseif($hash['vic_cell_phone'] && !preg_match('/^\d{3}-\d{4}$/', $hash['vic_cell_phone'])){
+      $this->messages[] = 'You did not fill in a valid victim cell phone number!'; 
+    }elseif($hash['rep_home_phone'] && !preg_match('/^\d{3}-\d{4}$/', $hash['rep_home_phone'])){
+      $this->messages[] = 'You did not fill in a valid reporter home phone number!';
+    }elseif($hash['rep_work_phone'] && !preg_match('/^\d{3}-\d{4}$/', $hash['rep_work_phone'])){
+      $this->messages[] = 'You did not fill in a valid reporter work phone number!';
+    }elseif($hash['rep_cell_phone'] && !preg_match('/^\d{3}-\d{4}$/', $hash['rep_cell_phone'])){
+      $this->messages[] = 'You did not fill in a valid reporter cell phone number!';
     }elseif(!$hash['crime_narr']){
       $this->messages[] = "You did not enter in a statement about what happened!"; 
     }elseif(!$hash['vic_sig']){
