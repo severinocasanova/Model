@@ -5,6 +5,7 @@ class CrimeReports extends AppModel {
   var $messages = array();
   #public $name = 'oracle_test';
   public $useDbConfig = 'oracle'; 
+  #public $useDbConfig = 'oracle_test'; 
   public $useTable = 'TPD_ONLINE_TBL';
   public $primaryKey = 'rep_num';
 
@@ -85,6 +86,8 @@ class CrimeReports extends AppModel {
     $hash['report_date'] = date('dmY');
     $hash['rep_num'] = $id;
     $hash['ip_addr'] = $_SERVER['REMOTE_ADDR'];
+    $hash['crime_to_time_min'] = ($hash['crime_to_time_min'] ? $hash['crime_to_time_min'] : '00');
+    $hash['crime_from_time_min'] = ($hash['crime_from_time_min'] ? $hash['crime_from_time_min'] : '00');
     if($hash['crime_from_time_ampm'] == 'AM' && $hash['crime_to_time_hour'] == '12') $hash['crime_from_time_hour'] -= 12;
     if($hash['crime_from_time_ampm'] == 'PM' && $hash['crime_from_time_hour'] != '12') $hash['crime_from_time_hour'] += 12;
     $hash['crime_from_time'] = sprintf("%02d", $hash['crime_from_time_hour']).$hash['crime_from_time_min'];
@@ -114,7 +117,7 @@ class CrimeReports extends AppModel {
     # setting these defaults to Y will send the report straight into I/LEADS
     $hash['rec_reviewed'] = (isset($hash['rec_reviewed']) ? $hash['rec_reviewed'] : 'Y');
     $hash['rec_completed'] = (isset($hash['rec_completed']) ? $hash['rec_completed'] : 'Y');
-
+    $vic_dob_date = date_parse($hash['vic_dob']);
     if(!$hash['crime_typ']){
       $this->messages[] = "You did not enter in a crime type!"; 
     }elseif(!$hash['crime_from_date']){
@@ -125,9 +128,9 @@ class CrimeReports extends AppModel {
       $this->messages[] = "You did not enter in all the required victim information!"; 
     }elseif($hash['vic_email'] && !preg_match('/^[a-zA-Z0-9_\.]+@[a-zA-Z0-9\-]+\.[a-zA-Z0-9\-\.]+$/', $hash['vic_email'])){
       $this->messages[] = 'You did not fill in a valid victim email address!'; 
-    }elseif($hash['vic_dob'] && !preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $hash['vic_dob'])){
+    }elseif($hash['vic_dob'] && ($vic_dob_date["error_count"] > 0 || !checkdate($vic_dob_date["month"], $vic_dob_date["day"], $vic_dob_date["year"]) || !preg_match('/^\d{2}\/\d{2}\/(19|20)\d{2}$/', $hash['vic_dob']))){
       $this->messages[] = 'You did not fill in a valid victim date of birth!'; 
-    }elseif(!preg_match('/^\d{3}-\d{4}$/', $hash['vic_home_phone'])){
+    }elseif($hash['vic_home_phone'] && !preg_match('/^\d{3}-\d{4}$/', $hash['vic_home_phone'])){
       $this->messages[] = 'You did not fill in a valid victim home phone number!'; 
     }elseif($hash['vic_work_phone'] && !preg_match('/^\d{3}-\d{4}$/', $hash['vic_work_phone'])){
       $this->messages[] = 'You did not fill in a valid victim work phone number!'; 
