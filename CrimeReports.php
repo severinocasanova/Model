@@ -53,13 +53,13 @@ class CrimeReports extends AppModel {
     if(empty($data['from'])) {
       return array();
     }
-    return array('CrimeReports.imp_date >= ' => $data['from']);
+    return array('CrimeReports.web_report_time >= ' => $data['from']);
   }
   public function filterTo($data = array()) {
     if(empty($data['to'])) {
       return array();
     }
-    return array('CrimeReports.imp_date <= ' => $data['to'].' 23:59:59');
+    return array('CrimeReports.web_report_time <= ' => $data['to'].' 23:59:59');
   }
 
         //The Associations below have been created with all possible keys, those that are not needed can be removed
