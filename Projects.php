@@ -29,7 +29,8 @@ class Projects {
   # id
   function get_project($args){
     $id = $args['id'];
-    $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
+    $args['user']['user_name'] = (isset($args['user']['user_name']) ? $args['user']['user_name'] : NULL);
+    $user_name = (isset($args['user_name']) ? $args['user_name'] : $args['user']['user_name']);
     $sql = "
       SELECT p.*,
              DATE_FORMAT(p.project_created, '%m/%e/%Y %l:%i%p')
@@ -54,7 +55,7 @@ class Projects {
     $hash = (isset($args['hash']) ? $args['hash']:'');
     $this->d = (isset($hash['d']) ? $hash['d']:$this->d);
     $this->s = (isset($hash['s']) ? $hash['s']:$this->s);
-    $search_fields = "CONCAT_WS(' ',p.project_name)";
+    $search_fields = "CONCAT_WS(' ',p.project_name,p.project_category)";
     $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");

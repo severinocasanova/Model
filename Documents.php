@@ -2,8 +2,10 @@
 
 class Documents {
   var $messages = array();
+  var $document = array();
   var $project = array();
   var $document_entries = array();
+  var $documents = array();
   var $projects = array();
   var $project_types = array();
   var $s = 'project_name';
@@ -61,20 +63,27 @@ class Documents {
   }
 
   function get_documents($args){
-    $hash = $args['hash'];
-    if($hash['s']){$this->s = $hash['s'];}
-    if($hash['d']){$this->d = $hash['d'];}
-    if($hash['l']){$this->l = $hash['l'];$limit = 'LIMIT '.$this->l;}
+    $hash = (isset($args['hash']) ? $args['hash']:'');
+    $this->d = (isset($hash['d']) ? $hash['d']:$this->d);
+    $this->s = (isset($hash['s']) ? $hash['s']:$this->s);
+    if(isset($hash['l'])){$this->l = $hash['l'];$limit = 'LIMIT '.$this->l;}
+    $limit = (isset($hash['l']) ? 'LIMIT '.$hash['l'] : '');
     $search_fields = "CONCAT_WS(' ',d.document_name,d.document_description)";
-    $q = $hash['q'];
-    $hash['q'] = Common::clean_search_query($q,$search_fields);
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
+    $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
+
+    $ipp = (isset($args['ipp']) ? $args['ipp'] : NULL);
+    $offset = (isset($args['offset']) ? "LIMIT $args[offset]" : "LIMIT 0");
+    $offset = ($ipp ? "$offset, $ipp" : "");
     if($hash['document_project_id'])
       $hash['c'] = $hash['document_project_id'];
-    if($hash['c'])
-      $if_document_project_id = "document_project_id = '".$hash['c']."' AND ";
-    if($hash['document_table']){
+    $if_document_project_id = ((isset($hash['c']) && $hash['c'] != "") ? "document_project_id = '$hash[c]' AND ":'');
+    $if_document_table = '';
+    if(isset($hash['document_table'])){
       $if_document_table = "document_table = '".$hash['document_table']."' AND ";
-      $if_document_table .= "document_table_id = '".$hash['document_table_id']."' AND ";
+      if(isset($hash['document_table_id'])){
+        $if_document_table .= "document_table_id = '".$hash['document_table_id']."' AND ";
+      }
     }
     $sql = "
       SELECT d.*,
@@ -89,13 +98,11 @@ class Documents {
       $limit";
     $results = mysql_query($sql);
     while($r = mysql_fetch_assoc($results)){
-      $r['project_url'] = Common::get_url(array('bow' => $r['project_name'],
-                                                 'id' => 'PRJ'.$r['project_id']));
       $r['document_url'] = Common::get_url(array('bow' => $r['document_name'],
                                                  'id' => 'DOC'.$r['document_id']));
       $items[] = $r;
     }
-    if($items)
+    if(isset($items))
       $this->documents = $items;
     return $this->documents;
   }

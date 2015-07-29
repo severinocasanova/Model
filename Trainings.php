@@ -11,35 +11,35 @@ class Trainings {
   # user, hash
   function add_training($args){
     $hash = $args['hash'];
-    $hash['training_due_date'] = date('Y-m-d',strtotime($hash['training_due_date']));
-    if(!$hash['training_name']){
-      $this->messages[] = "You did not enter in a training name!";
+    $hash['training_datetime'] = date('Y-m-d H:i:s',strtotime($hash['training_date'].' '.$hash['training_time']));
+    unset($hash['training_date']);
+    unset($hash['training_time']);
+    if(!$hash['training_datetime']){
+      $this->messages[] = "You did not enter in a training date time!";
     } else {
       $id = Database::insert(array('table' => 'trainings', 'hash' => $hash));
-      if($id)
+      if($id){
         $this->messages[] = "You have successfully added a training!";
-      return $id;
+        return $id;
+      }
     }
   }
 
   # id
   function get_training($args){
     $id = $args['id'];
-    $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
     $sql = "
-      SELECT p.*,
-             DATE_FORMAT(p.training_created, '%m/%e/%Y %l:%i%p')
-               AS training_created_formatted,
-             DATE_FORMAT(p.training_due_date, '%c/%e/%Y')
-               AS training_due_date_formatted2
-      FROM trainings p
+      SELECT t.*,
+             DATE_FORMAT(t.training_datetime, '%m/%e/%Y')
+               AS training_date_formatted,
+             DATE_FORMAT(t.training_datetime, '%H:%i:%s')
+               AS training_time_formatted
+      FROM trainings t
       WHERE training_id = '$id'
       LIMIT 1";
     $result = mysql_query($sql);
     $r = mysql_fetch_assoc($result);
     if($r){
-      $r['training_url'] = Common::get_url(array('bow' => $r['training_name'],
-                                                'id' => 'PRJ'.$r['training_id']));
       $this->training = $r;
     }
     return $this->training;
@@ -47,22 +47,17 @@ class Trainings {
 
   # hash
   function get_trainings($args){
-    $hash = $args['hash'];
-    if($hash['s']){$this->s = $hash['s'];}
-    if($hash['d']){$this->d = $hash['d'];}
+    $hash = (isset($args['hash']) ? $args['hash']:'');
+    $this->d = (isset($hash['d']) ? $hash['d']:$this->d);
+    $this->s = (isset($hash['s']) ? $hash['s']:$this->s);
     $search_fields = "CONCAT_WS(' ',t.training_trainee)";
-    $q = $hash['q'];
-    $hash['q'] = Common::clean_search_query($q,$search_fields);
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
+    $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
-    if(isset($hash['c']) && $hash['c'] != "")
-      $if_category = "training_category = '$hash[c]' AND ";
-    if(isset($hash['o']) && $hash['o'] != "")
-      $if_owner = "training_owner = '$hash[o]' AND ";
-    if(isset($hash['t']) && $hash['t'] != "")
-      $if_type = "PlanNum LIKE '$hash[t]-%' AND ";
-    if(array_key_exists('training_customer_id', $hash))
-      $if_customer_id = "training_customer_id = '$hash[training_customer_id]' AND ";
+    #if(isset($hash['c']) && $hash['c'] != "")
+    #  $if_category = "training_category = '$hash[c]' AND ";
+    $if_category = ((isset($hash['c']) && $hash['c'] != "") ? "training_category = '$hash[c]' AND ":'');
     $sql = "
       SELECT t.*,
              DATE_FORMAT(t.training_created, '%m/%e/%Y %l:%i%p')
@@ -72,14 +67,13 @@ class Trainings {
       FROM trainings t
       WHERE ($search_fields LIKE '%$hash[q]%') AND
             $if_category
-            $if_type
             training_display = '1'
       ORDER BY $this->s $this->d";
     $results = mysql_query($sql);
     while ($r = mysql_fetch_assoc($results)){
-      $r['training_url'] = Common::get_url(array('bow' => $r['training_name'],
+      $r['training_url'] = Common::get_url(array('bow' => $r['training_trainee'],
                                                 'id' => 'TR'.$r['training_id']));
-      $r['days_before'] = ceil((strtotime($r['training_due_date']) - time()) / 86400);
+      #$r['days_before'] = ceil((strtotime($r['training_due_date']) - time()) / 86400);
       $trainings[] = $r;
     }
     if($trainings)
@@ -93,19 +87,12 @@ class Trainings {
     $hash = $args['hash'];
     $search_fields = "CONCAT_WS(' ',p.PlanNum,p.Description)";
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
-    if(isset($hash['c']) && $hash['c'] != "")
-      $if_category = "training_category = '$hash[c]' AND ";
-    if(isset($hash['t']) && $hash['t'] != "")
-      $if_type = "PlanNum LIKE '$hash[t]-%' AND ";
-    if(array_key_exists('training_customer_id', $hash))
-      $if_customer_id = "training_customer_id = '$hash[training_customer_id]' AND ";
+    $if_category = ((isset($hash['c']) && $hash['c'] != "") ? "training_category = '$hash[c]' AND ":'');
     $sql = "
       SELECT count(p.RecID)
       FROM PlansTable p
       WHERE ($search_fields LIKE '%$hash[q]%') AND
             $if_category
-            $if_type
-            $if_customer_id
             RecID IS NOT NULL";
     $results = mysql_query($sql);
     $matched = mysql_fetch_row($results);
@@ -140,7 +127,8 @@ class Trainings {
   }
 
   function list_trainings_categories($args){
-    $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
+    $args['user']['user_name'] = (isset($args['user']['user_name']) ? $args['user']['user_name'] : NULL);
+    $user_name = (isset($args['user_name']) ? $args['user_name'] : $args['user']['user_name']);
     $sql = "
       SELECT DISTINCT training_category
       FROM trainings

@@ -262,14 +262,16 @@ class ProjectContacts {
   # hash
   function get_project_contacts($args){
     $hash = $args['hash'];
-    $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
+    $args['user']['user_name'] = (isset($args['user']['user_name']) ? $args['user']['user_name'] : NULL);
+    $user_name = (isset($args['user_name']) ? $args['user_name'] : $args['user']['user_name']);
     $search_fields = "CONCAT_WS(' ',c.contact_first,c.contact_last,c.contact_organization,c.contact_notes,e.email_address,pn.phone_areacode,pn.phone_three,pn.phone_four)";
     #$search_fields = "CONCAT_WS(' ',c.project_contact_first,c.project_contact_last,c.project_contact_organization)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
-    if($hash['t'])
-      $if_type = "contact_type = '$hash[t]' AND ";
-    if(!$hash['offset'])
-      $hash['offset'] = 0;
+    $ipp = (isset($args['ipp']) ? $args['ipp'] : NULL);
+    $offset = (isset($args['offset']) ? "LIMIT $args[offset]" : "LIMIT 0");
+    $offset = ($ipp ? "$offset, $ipp" : "");
+    $if_type = ((isset($hash['t']) && $hash['t'] != "") ? "contact_type = '$hash[t]' AND ":'');
     if(array_key_exists('project_contact_project_id', $hash))
       $if_project_contact_project_id = "project_contact_project_id = '$hash[project_contact_project_id]' AND ";
     $sql = "
@@ -288,7 +290,7 @@ class ProjectContacts {
             $if_project_contact_project_id
             contact_display = '1'
       ORDER BY contact_name ASC
-      LIMIT $hash[offset],100";
+      $offset";
       #LEFT OUTER JOIN addresses a ON (c.project_contact_id = a.address_project_contact_id)
       #LEFT OUTER JOIN screen_names sn ON (c.project_contact_id = sn.screen_project_contact_id)
     $result = mysql_query($sql);

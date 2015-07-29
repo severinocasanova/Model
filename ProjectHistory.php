@@ -51,14 +51,13 @@ class Projecthistory {
     $hash = $args['hash'];
     $this->d = (isset($hash['d']) ? $hash['d']:$this->d);
     $this->s = (isset($hash['s']) ? $hash['s']:$this->s);
-    $limit = '';
-    $hash['l'] = (isset($hash['l']) ? $hash['l']:'');
-    if($hash['l']){$this->limit = $hash['l'];$limit = 'LIMIT '.$this->limit;}
     $search_fields = "CONCAT_WS(' ',ph.project_history_title,ph.project_history_content)";
     $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
-    $hash['p'] = (isset($hash['project_history_project_id']) ? $hash['project_history_project_id']:'');
-    $if_project_history_project_id = ($hash['p'] ? "project_history_project_id = '".$hash['p']."' AND ":'');
+    $offset = (isset($args['offset']) ? "LIMIT $args[offset]" : "LIMIT 0");
+    $offset = (isset($args['ipp']) ? "$offset, ".$args['ipp'] : "");
+    $hash['pid'] = (isset($hash['pid']) ? $hash['pid']:'');
+    $if_pid = ($hash['pid'] ? "project_history_project_id = '".$hash['pid']."' AND ":'');
     $hash['u'] = (isset($hash['u']) ? $hash['u']:'');
     $if_username = ($hash['u'] ? "project_history_user_name = '".$hash['u']."' AND ":'');
     $sql = "
@@ -70,11 +69,11 @@ class Projecthistory {
       FROM project_history ph
       LEFT JOIN projects p ON (ph.project_history_project_id = p.project_id)
       WHERE ($search_fields LIKE '%$hash[q]%') AND
-            $if_project_history_project_id
+            $if_pid
             $if_username
             project_history_display = '1'
       ORDER BY project_history_date DESC
-      $limit";
+      $offset";
     $results = mysql_query($sql);
     while($r = mysql_fetch_assoc($results)){
       $r['project_url'] = Common::get_url(array('bow' => $r['project_name'],
@@ -84,6 +83,29 @@ class Projecthistory {
     if($items)
       $this->project_history_entries = $items;
     return $this->project_history_entries;
+  }
+
+  # hash
+  function get_project_history_entries_count($args){
+    $hash = $args['hash'];
+    $search_fields = "CONCAT_WS(' ',ph.project_history_title,ph.project_history_content)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
+    $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
+    $hash['pid'] = (isset($hash['pid']) ? $hash['pid']:'');
+    $if_pid = ($hash['pid'] ? "project_history_project_id = '".$hash['pid']."' AND ":'');
+    $hash['u'] = (isset($hash['u']) ? $hash['u']:'');
+    $if_username = ($hash['u'] ? "project_history_user_name = '".$hash['u']."' AND ":'');
+    $sql = "
+      SELECT count(ph.project_history_id)
+      FROM project_history ph
+      LEFT JOIN projects p ON (ph.project_history_project_id = p.project_id)
+      WHERE ($search_fields LIKE '%$hash[q]%') AND
+            $if_pid
+            $if_username
+            project_history_display = '1'";
+    $results = mysql_query($sql);
+    $matched = mysql_fetch_row($results);
+    return $matched[0];
   }
 
   # id, hash

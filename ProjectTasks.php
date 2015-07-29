@@ -47,17 +47,17 @@ class ProjectTasks {
   }
 
   function get_project_tasks($args){
-    $hash = $args['hash'];
-    if($hash['s']){$this->s = $hash['s'];}
-    if($hash['d']){$this->d = $hash['d'];}
-    if($hash['l']){$this->l = $hash['l'];$limit = 'LIMIT '.$this->l;}
+    $hash = (isset($args['hash']) ? $args['hash']:'');
+    $this->d = (isset($hash['d']) ? $hash['d']:$this->d);
+    $this->s = (isset($hash['s']) ? $hash['s']:$this->s);
+    $limit = (isset($hash['l']) ? 'LIMIT '.$hash['l'] : '');
     $search_fields = "CONCAT_WS(' ',pt.project_task_title)";
-    $q = $hash['q'];
-    $hash['q'] = Common::clean_search_query($q,$search_fields);
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
+    $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     if($hash['project_task_project_id'])
       $hash['c'] = $hash['project_task_project_id'];
-    if($hash['c'])
-      $if_project_task_project_id = "project_task_project_id = '".$hash['c']."' AND";
+    $if_project_task_project_id = ((isset($hash['c']) && $hash['c'] != "") ? "project_task_project_id = '$hash[c]' AND ":'');
+    $if_status = '';
     if(!empty($hash['t'])){
       if($hash['t'] == 'Open'){
         $if_status = "project_task_status != 'Closed' AND ";
@@ -65,8 +65,7 @@ class ProjectTasks {
         $if_status = "project_task_status = '$hash[t]' AND ";
       }
     }
-    if(isset($hash['u']) && $hash['u'] != "")
-      $if_owner = "project_task_owner = '$hash[u]' AND ";
+    $if_owner = ((isset($hash['u']) && $hash['u'] != "") ? "project_task_owner = '$hash[u]' AND ":'');
     $sql = "
       SELECT pt.*,p.*,
              DATE_FORMAT(pt.project_task_created, '%c/%e/%Y %l:%i%p')
@@ -86,11 +85,11 @@ class ProjectTasks {
     while($r = mysql_fetch_assoc($results)){
       $r['project_url'] = Common::get_url(array('bow' => $r['project_name'],
                                                 'id' => 'PRJ'.$r['project_id']));
-      $r['project_task_url'] = Common::get_url(array('bow' => $r['project_task_name'],
+      $r['project_task_url'] = Common::get_url(array('bow' => $r['project_task_title'],
                                              'id' => 'TSK'.$r['project_task_id']));
       $items[] = $r;
     }
-    if($items)
+    if(isset($items))
       $this->project_tasks = $items;
     return $this->project_tasks;
   }
