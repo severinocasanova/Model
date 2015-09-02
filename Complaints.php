@@ -97,11 +97,79 @@ class Complaints {
     return $this->complaint;
   }
 
+  # id
+  function get_complaint_next($args){
+    $id = $args['id'];
+    if(preg_match("/^\d+$/",$id)){
+      $where = "WHERE complaint_id > '$id' AND";
+    }else{
+      $where = "WHERE complaint_id = '9999999999999' AND ";
+    }
+    $sql = "
+      SELECT c.*,
+             DATE_FORMAT(c.complaint_incident_date, '%c/%e/%Y')
+               AS complaint_incident_date_formatted2,
+             DATE_FORMAT(c.complaint_received_date, '%c/%e/%Y')
+               AS complaint_received_date_formatted2,
+             DATE_FORMAT(c.complaint_oia_close_date, '%c/%e/%Y')
+               AS complaint_oia_close_date_formatted2,
+             DATE_FORMAT(c.complaint_audited_date, '%c/%e/%Y')
+               AS complaint_audited_date_formatted2,
+             DATE_FORMAT(c.complaint_closed_date, '%c/%e/%Y')
+               AS complaint_closed_date_formatted2
+      FROM complaints c
+      $where
+            complaint_display = 1
+      ORDER BY complaint_id ASC
+      LIMIT 1";
+    $result = mysql_query($sql);
+    $r = mysql_fetch_assoc($result);
+    if($r){
+      $r['complaint_url'] = Common::get_url(array('bow' => $r['complaint_first_name'].'-'.$r['complaint_last_name'],
+                                             'id' => 'COMP'.$r['complaint_id']));
+    }
+    return $r;
+  }
+
+  # id
+  function get_complaint_prev($args){
+    $id = $args['id'];
+    if(preg_match("/^\d+$/",$id)){
+      $where = "WHERE complaint_id < '$id' AND";
+    }else{
+      $where = "WHERE complaint_id = '9999999999999' AND ";
+    }
+    $sql = "
+      SELECT c.*,
+             DATE_FORMAT(c.complaint_incident_date, '%c/%e/%Y')
+               AS complaint_incident_date_formatted2,
+             DATE_FORMAT(c.complaint_received_date, '%c/%e/%Y')
+               AS complaint_received_date_formatted2,
+             DATE_FORMAT(c.complaint_oia_close_date, '%c/%e/%Y')
+               AS complaint_oia_close_date_formatted2,
+             DATE_FORMAT(c.complaint_audited_date, '%c/%e/%Y')
+               AS complaint_audited_date_formatted2,
+             DATE_FORMAT(c.complaint_closed_date, '%c/%e/%Y')
+               AS complaint_closed_date_formatted2
+      FROM complaints c
+      $where 
+            complaint_display = 1
+      ORDER BY complaint_id DESC
+      LIMIT 1";
+    $result = mysql_query($sql);
+    $r = mysql_fetch_assoc($result);
+    if($r){
+      $r['complaint_url'] = Common::get_url(array('bow' => $r['complaint_first_name'].'-'.$r['complaint_last_name'],
+                                             'id' => 'COMP'.$r['complaint_id']));
+    }
+    return $r;
+  }
+
   # hash
   function get_complaints($args){
     $hash = $args['hash'];
-    $this->d = ($hash['d'] ? $hash['d']:$this->d);
-    $this->s = ($hash['s'] ? $hash['s']:$this->s);
+    $this->d = ((isset($hash['d']) && $hash['d'] != '') ? $hash['d']:$this->d);
+    $this->s = ((isset($hash['s']) && $hash['s'] != '') ? $hash['s']:$this->s);
     $search_fields = "CONCAT_WS(' ',c.complaint_id,c.complaint_first_name,c.complaint_last_name,c.complaint_oia_number)";
     $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
@@ -112,6 +180,13 @@ class Complaints {
     $if_type = (isset($hash['t']) && $hash['t'] != '' ? "Type LIKE '$hash[t]' AND ":'');
              #DATE_FORMAT(c.Date Received, '%c/%e/%Y')
              #  AS complaint_date_received_formatted2
+    $complaint_types = array(
+      'c1:' => 'EC1',
+      'c2:' => 'EC2',
+      'c3:' => 'EC3',
+      'contact' => 'Contact',
+      'inquiry' => 'Inquiry',
+      'n\/a' => 'Inquiry');
     $sql = "
       SELECT c.*,
              DATE_FORMAT(c.complaint_received_date, '%c/%e/%Y')
@@ -127,6 +202,32 @@ class Complaints {
     while ($r = mysql_fetch_assoc($results)){
       $r['complaint_url'] = Common::get_url(array('bow' => $r['complaint_first_name'].'-'.$r['complaint_last_name'],
                                              'id' => 'COMP'.$r['complaint_id']));
+      if(!$r['complaint_complaint_type']){
+      #  $complaint_id = $r['complaint_id'];
+      #  #$r['complaint_complaint_type'] = 'updating...';
+      #  $sql2 = "
+      #    SELECT * 
+      #    FROM `Allegation Number`
+      #    WHERE `Allegation Number` = '$complaint_id'";
+      #  $results2 = mysql_query($sql2);
+      #  while ($r2 = mysql_fetch_assoc($results2)){
+      #    $r['complaint_complaint_type'] .= $r2['Allegation Code'].$r2['Disposition'];
+      #  }
+      #  $complaint_complaint_type_orig = $r['complaint_complaint_type'];
+      #  foreach($complaint_types as $k => $v){
+      #    if(preg_match("/$k/i",$r['complaint_complaint_type'])){
+      #      $r['complaint_complaint_type'] = $v;
+      #    }
+      #  }
+      #  $new_complaint_complaint_type = $r['complaint_complaint_type'];
+      #  #$sql3 = "
+      #  #  UPDATE complaints
+      #  #  SET complaint_complaint_type = '$new_complaint_complaint_type'
+      #  #  WHERE complaint_id = '$complaint_id'
+      #  #  LIMIT 1";
+      #  #mysql_query($sql3) or trigger_error("SQL", E_USER_ERROR);
+      #  $r['complaint_complaint_type'] .= '=>'.$complaint_complaint_type_orig;
+      }
       $complaints[] = $r;
     }
     if($complaints)

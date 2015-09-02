@@ -64,8 +64,9 @@ class Documents {
 
   function get_documents($args){
     $hash = (isset($args['hash']) ? $args['hash']:'');
-    $this->d = (isset($hash['d']) ? $hash['d']:$this->d);
-    $this->s = (isset($hash['s']) ? $hash['s']:$this->s);
+    $this->d = ((isset($hash['d']) && $hash['d'] != '') ? $hash['d']:$this->d);
+    $this->s = ((isset($hash['s']) && $hash['s'] != '') ? $hash['s']:$this->s);
+
     if(isset($hash['l'])){$this->l = $hash['l'];$limit = 'LIMIT '.$this->l;}
     $limit = (isset($hash['l']) ? 'LIMIT '.$hash['l'] : '');
     $search_fields = "CONCAT_WS(' ',d.document_name,d.document_description)";
@@ -75,7 +76,7 @@ class Documents {
     $ipp = (isset($args['ipp']) ? $args['ipp'] : NULL);
     $offset = (isset($args['offset']) ? "LIMIT $args[offset]" : "LIMIT 0");
     $offset = ($ipp ? "$offset, $ipp" : "");
-    if($hash['document_project_id'])
+    if(isset($hash['document_project_id']))
       $hash['c'] = $hash['document_project_id'];
     $if_document_project_id = ((isset($hash['c']) && $hash['c'] != "") ? "document_project_id = '$hash[c]' AND ":'');
     $if_document_table = '';

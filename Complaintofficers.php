@@ -36,8 +36,8 @@ class Complaintofficers {
     $result = mysql_query($sql);
     $r = mysql_fetch_assoc($result);
     if($r){
-      $r['complaintofficer_url'] = Common::get_url(array('bow' => $r['complaintofficer_first_name'].'-'.$r['complaintofficer_last_name'],
-                                             'id' => 'COMP'.$r['complaintofficer_allegation_id']));
+      $r['complaint_officer_url'] = Common::get_url(array('bow' => $r['complaint_officer_name'],
+                                             'id' => 'COMP'.$r['complaint_officer_id']));
       $this->complaint_officer = $r;
     }
     return $this->complaint_officer;
@@ -46,9 +46,9 @@ class Complaintofficers {
   # hash
   function get_complaint_officers($args){
     $hash = $args['hash'];
-    $this->d = ($hash['d'] ? $hash['d']:$this->d);
-    $this->s = ($hash['s'] ? $hash['s']:$this->s);
-    $search_fields = "CONCAT_WS(' ',co.complaint_officer_name,co.complaint_officer_allegation)";
+    $this->d = ((isset($hash['d']) && $hash['d'] != '') ? $hash['d']:$this->d);
+    $this->s = ((isset($hash['s']) && $hash['s'] != '') ? $hash['s']:$this->s);
+    $search_fields = "CONCAT_WS(' ',co.complaint_officer_name,co.complaint_officer_payroll)";
     $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
@@ -56,15 +56,15 @@ class Complaintofficers {
     $offset = ($ipp ? "$offset, $ipp" : "");
     if($hash['complaint_officer_complaint_id'])
       $hash['c'] = $hash['complaint_officer_complaint_id'];
-    if($hash['c'])
-      $if_complaint_officer_complaint_id = "complaint_officer_complaint_id = '".$hash['c']."' AND ";
+    #if($hash['c'])
+    #  $if_complaint_officer_complaint_id = "complaint_officer_complaint_id = '".$hash['c']."' AND ";
+    $if_category = ((isset($hash['c']) && $hash['c'] != "") ? "complaint_officer_complaint_id = '$hash[c]' AND ":'');
+    $complaint_officers = array();
     $sql = "
       SELECT co.*
       FROM complaint_officers co
       WHERE ($search_fields LIKE '%$hash[q]%') AND
             $if_category
-            $if_complaint_officer_complaint_id
-            $if_type
             complaint_officer_display = '1'
       ORDER BY $this->s $this->d
       $offset";
@@ -103,6 +103,7 @@ class Complaintofficers {
   function list_complaint_officer_disciplines($args){
     $this->complaint_officer_disciplines = array(
       'Corrective Action',
+      'Inclusive',
       'N/A',
       'Resign in Lieu of Term',
       'Suspension',

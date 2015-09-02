@@ -49,8 +49,8 @@ class Complaintactions {
   # hash
   function get_complaint_actions($args){
     $hash = $args['hash'];
-    $this->d = ($hash['d'] ? $hash['d']:$this->d);
-    $this->s = ($hash['s'] ? $hash['s']:$this->s);
+    $this->d = ((isset($hash['d']) && $hash['d'] != '') ? $hash['d']:$this->d);
+    $this->s = ((isset($hash['s']) && $hash['s'] != '') ? $hash['s']:$this->s);
     $search_fields = "CONCAT_WS(' ',ca.complaint_action_taken)";
     $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
@@ -59,8 +59,9 @@ class Complaintactions {
     $offset = ($ipp ? "$offset, $ipp" : "");
     if($hash['complaint_action_complaint_id'])
       $hash['c'] = $hash['complaint_action_complaint_id'];
-    if($hash['c'])
-      $if_complaint_action_complaint_id = "complaint_action_complaint_id = '".$hash['c']."' AND ";
+    #if($hash['c'])
+    #  $if_complaint_action_complaint_id = "complaint_action_complaint_id = '".$hash['c']."' AND ";
+    $if_category = ((isset($hash['c']) && $hash['c'] != "") ? "complaint_action_complaint_id = '$hash[c]' AND ":'');
     #         DATE_FORMAT(ca.complaint_action_date, '%m/%e/%Y %l:%i%p')
     #           AS complaint_action_date_formatted,
     $sql = "
@@ -72,8 +73,6 @@ class Complaintactions {
       FROM complaint_actions ca
       WHERE ($search_fields LIKE '%$hash[q]%') AND
             $if_category
-            $if_complaint_action_complaint_id
-            $if_type
             complaint_action_display = '1'
       ORDER BY $this->s $this->d
       $offset";
