@@ -168,7 +168,7 @@ class ESProjects {
       WHERE ($search_fields LIKE '%$hash[q]%') AND
             $if_scanned
             $if_type
-            ProjectDeleted = '0'";
+            esproject_display = '1'";
     $results = mysql_query($sql);
     $matched = mysql_fetch_row($results);
     return $matched[0];

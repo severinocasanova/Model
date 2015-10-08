@@ -46,18 +46,18 @@ class ESProjecthistory {
 
   function get_esproject_history_entries($args){
     $hash = $args['hash'];
-    if($hash['s']){$this->sort = $hash['s'];}
-    if($hash['d']){$this->direction = $hash['d'];}
-    if($hash['l']){$this->limit = $hash['l'];$limit = 'LIMIT '.$this->limit;}
+    $this->d = ((isset($hash['d']) && $hash['d'] != '') ? $hash['d']:$this->d);
+    $this->s = ((isset($hash['s']) && $hash['s'] != '') ? $hash['s']:$this->s);
+    #if($hash['l']){$this->limit = $hash['l'];$limit = 'LIMIT '.$this->limit;}
     $search_fields = "CONCAT_WS(' ',ph.Date,ph.Status)";
-    $q = $hash['q'];
-    $hash['q'] = Common::clean_search_query($q,$search_fields);
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
+    $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     if($hash['esproject_id'])
       $hash['p'] = $hash['esproject_id'];
     if($hash['p'])
       $if_esproject_id = "ph.esproject_id = '".$hash['p']."' AND";
-    if($hash['u'])
-      $if_username = "esproject_history_user_name = '".$hash['u']."' AND";
+    #if($hash['u'])
+    #  $if_username = "esproject_history_user_name = '".$hash['u']."' AND";
     $sql = "
       SELECT ph.*,ph.Status as StatusStatus,
              DATE_FORMAT(ph.AddDate, '%c/%e/%Y')
@@ -66,12 +66,11 @@ class ESProjecthistory {
       WHERE ($search_fields LIKE '%$hash[q]%') AND
             $if_esproject_id
             ph.esproject_history_display = '1'
-      ORDER BY ph.Ordinal DESC
-      $limit";
+      ORDER BY ph.Ordinal DESC";
     $results = mysql_query($sql);
     while($r = mysql_fetch_assoc($results)){
-      $r['esproject_url'] = Common::get_url(array('bow' => $r['esproject_name'],
-                                                  'id' => 'PRJ'.$r['esproject_id']));
+      #$r['esproject_url'] = Common::get_url(array('bow' => $r['esproject_name'],
+      #                                            'id' => 'PRJ'.$r['esproject_id']));
       $items[] = $r;
     }
     if($items)

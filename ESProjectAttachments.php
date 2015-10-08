@@ -56,12 +56,12 @@ class ESProjectattachments {
 
   function get_esproject_attachments($args){
     $hash = $args['hash'];
-    if($hash['s']){$this->sort = $hash['s'];}
-    if($hash['d']){$this->direction = $hash['d'];}
-    if($hash['l']){$this->limit = $hash['l'];$limit = 'LIMIT '.$this->limit;}
+    $this->d = ((isset($hash['d']) && $hash['d'] != '') ? $hash['d']:$this->d);
+    $this->s = ((isset($hash['s']) && $hash['s'] != '') ? $hash['s']:$this->s);
+    #if($hash['l']){$this->limit = $hash['l'];$limit = 'LIMIT '.$this->limit;}
     $search_fields = "CONCAT_WS(' ',pa.Comments)";
-    $q = $hash['q'];
-    $hash['q'] = Common::clean_search_query($q,$search_fields);
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
+    $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     if($hash['esproject_id'])
       $hash['p'] = $hash['esproject_id'];
     if($hash['p'])
@@ -74,8 +74,7 @@ class ESProjectattachments {
       WHERE ($search_fields LIKE '%$hash[q]%') AND
             $if_esproject_id
             pa.esproject_attachment_display
-      ORDER BY pa.Date DESC
-      $limit";
+      ORDER BY pa.Date DESC";
     $results = mysql_query($sql);
     while($r = mysql_fetch_assoc($results)){
       #$r['esproject_url'] = Common::get_url(array('bow' => $r['esproject_name'],
