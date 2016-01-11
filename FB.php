@@ -15,7 +15,7 @@ class FB {
 
   # user, hash
   function add_fb($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $hash['fb_FBDATE'] = date('Y-m-d',strtotime($hash['fb_FBDATE']));
     if(!$hash['fb_book']){
       $this->messages[] = "You did not enter in a Book #!";
@@ -29,8 +29,9 @@ class FB {
 
   # hash
   function get_books($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',fb.fb_book)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT fb_book
@@ -49,8 +50,9 @@ class FB {
 
   # hash
   function get_book_pages($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',fb.fb_page)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT fb_page
@@ -69,8 +71,9 @@ class FB {
 
   # hash
   function get_ranges($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',fb.fb_range)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT fb_range
@@ -89,8 +92,9 @@ class FB {
 
   # hash
   function get_sections($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',fb.fb_section)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT fb_section
@@ -109,8 +113,9 @@ class FB {
 
   # hash
   function get_surveyors($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',fb.fb_surveyor)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT fb_surveyor
@@ -142,7 +147,7 @@ class FB {
                                            'id' => 'FB'.$r['fb_id']));
       $r['fb_viewer_url'] = Common::get_url(array('bow' => $r['fb_description'],
                                            'id' => 'FBV'.$r['fb_id']));
-      $path = '/maps-and-records/webroot/images/Survey/FieldBook/'.$r['fb_book'].'/';
+      $path = '/apps/maps-and-records/webroot/images/Survey/FieldBook/'.$r['fb_book'].'/';
       if($handle = opendir($_SERVER['DOCUMENT_ROOT'].$path)){
         while (false !== ($filename = readdir($handle))){
           if(preg_match("/\.tiff?/i",$filename)){
@@ -161,23 +166,30 @@ class FB {
 
   # hash
   function get_fbs($args){
-    $hash = $args['hash'];
-    if($hash['s']){$this->s = $hash['s'];}
-    if($hash['d']){$this->d = $hash['d'];}
+    $hash = (isset($args['hash']) ? $args['hash']:'');
+    $this->d = (isset($hash['d']) ? $hash['d']:$this->d);
+    $this->s = (isset($hash['s']) ? $hash['s']:$this->s);
     $search_fields = "CONCAT_WS(' ',f.fb_book,f.fb_description)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
+    $if_book = '';
     if(isset($hash['b']) && $hash['b'] != "")
       $if_book = "fb_book = '$hash[b]' AND ";
+    $if_book_page = '';
     if(isset($hash['bp']) && $hash['bp'] != "")
       $if_book_page = "fb_page = '$hash[bp]' AND ";
+    $if_range = '';
     if(isset($hash['r']) && $hash['r'] != "")
       $if_range = "fb_range = '$hash[r]' AND ";
+    $if_section = '';
     if(isset($hash['sec']) && $hash['sec'] != "")
       $if_section = "fb_section = '$hash[sec]' AND ";
+    $if_surveyor = '';
     if(isset($hash['fs']) && $hash['fs'] != "")
       $if_surveyor = "fb_surveyor = '$hash[fs]' AND ";
+    $if_township = '';
     if(isset($hash['t']) && $hash['t'] != "")
       $if_township = "fb_township = '$hash[t]' AND ";
     $sql = "
@@ -207,17 +219,23 @@ class FB {
 
   # hash
   function get_fbs_count($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',f.fb_book,f.fb_description)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
+    $if_book = '';
     if(isset($hash['b']) && $hash['b'] != "")
       $if_book = "fb_book = '$hash[b]' AND ";
+    $if_book_page = '';
     if(isset($hash['bp']) && $hash['bp'] != "")
       $if_book_page = "fb_page = '$hash[bp]' AND ";
+    $if_range = '';
     if(isset($hash['r']) && $hash['r'] != "")
       $if_range = "fb_range = '$hash[r]' AND ";
+    $if_section = '';
     if(isset($hash['sec']) && $hash['sec'] != "")
       $if_section = "fb_section = '$hash[sec]' AND ";
+    $if_township = '';
     if(isset($hash['t']) && $hash['t'] != "")
       $if_township = "fb_township = '$hash[t]' AND ";
     $sql = "
@@ -237,10 +255,10 @@ class FB {
 
   # hash
   function get_townships($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',fb.fb_township)";
-    $q = $hash['q'];
-    $hash['q'] = Common::clean_search_query($q,$search_fields);
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
+    $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
     $sql = "
@@ -261,7 +279,7 @@ class FB {
   # id, hash
   function update_fb($args){
     $id = $args['id'];
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $hash['fb_due_date'] = date('Y-m-d',strtotime($hash['fb_due_date']));
     $item = $this->get_fb(array('id' => $id));
     $where = "fb_id = '$id'";

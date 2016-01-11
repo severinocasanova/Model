@@ -14,7 +14,7 @@ class AD {
 
   # user, hash
   function add_ad($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     if(!$hash['ad_number']){
       $this->messages[] = "You did not enter in an AD #!";
     } else {
@@ -28,7 +28,6 @@ class AD {
   # id
   function get_ad($args){
     $id = $args['id'];
-    $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
     $sql = "
       SELECT ad.*, pl.*
       FROM ads ad
@@ -50,8 +49,8 @@ class AD {
       preg_match("/^(\w+)-/i",$r['ad_number'],$matches);
       $tp = ($matches[1] ? $matches[1] : '');
       preg_match("/\w+-(\d+)-/i",$r['ad_number'],$matches);
-      $yr = ($matches[1] ? $matches[1] : '0000');
-      $path = '/maps-and-records/webroot/images/Plan_Lib/AD/'.$r['ad_number'].'/';
+      $yr = (isset($matches[1]) ? $matches[1] : '0000');
+      $path = '/apps/maps-and-records/webroot/images/Plan_Lib/AD/'.$r['ad_number'].'/';
       if($handle = opendir($_SERVER['DOCUMENT_ROOT'].$path)){
         while (false !== ($filename = readdir($handle))){
           if(preg_match("/\.tiff?/i",$filename)){
@@ -70,13 +69,15 @@ class AD {
 
   # hash
   function get_ads($args){
-    $hash = $args['hash'];
-    if($hash['s']){$this->s = $hash['s'];}
-    if($hash['d']){$this->d = $hash['d'];}
+    $hash = (isset($args['hash']) ? $args['hash']:'');
+    $this->d = (isset($hash['d']) ? $hash['d']:$this->d);
+    $this->s = (isset($hash['s']) ? $hash['s']:$this->s);
     $search_fields = "CONCAT_WS(' ',ad.ad_number,ad.ad_description,ad.ad_plan_number)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
+    $if_scanned = '';
     if(isset($hash['c']) && $hash['c'] != "")
       $if_scanned = "ad_scanned = '$hash[c]' AND ";
     $sql = "
@@ -104,9 +105,11 @@ class AD {
 
   # hash
   function get_ads_count($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',ad.ad_number,ad.ad_description,ad.ad_plan_number)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
+    $if_scanned = '';
     if(isset($hash['c']) && $hash['c'] != "")
       $if_scanned = "ad_scanned = '$hash[c]' AND ";
     $sql = "
@@ -123,7 +126,7 @@ class AD {
   # id, hash
   function update_ad($args){
     $id = $args['id'];
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $hash['ad_due_date'] = date('Y-m-d',strtotime($hash['ad_due_date']));
     $item = $this->get_ad(array('id' => $id));
     $where = "ad_id = '$id'";

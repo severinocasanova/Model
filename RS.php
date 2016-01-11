@@ -14,7 +14,7 @@ class RS {
 
   # user, hash
   function add_rs($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     if(!$hash['rs_number']){
       $this->messages[] = "You did not enter in an RS #!";
     } else {
@@ -27,8 +27,9 @@ class RS {
 
   # hash
   function get_books($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',rs.rs_book)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT rs_book
@@ -47,8 +48,9 @@ class RS {
 
   # hash
   function get_book_pages($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',rs.rs_page)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT rs_page
@@ -67,8 +69,9 @@ class RS {
 
   # hash
   function get_ranges($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',rs.rs_range)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT rs_range
@@ -87,8 +90,9 @@ class RS {
 
   # hash
   function get_sections($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',rs.rs_section)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT rs_section
@@ -133,7 +137,7 @@ class RS {
       $tp = ($matches[1] ? $matches[1] : '');
       preg_match("/\w+-(\d+)-/i",$r['rs_number'],$matches);
       $yr = ($matches[1] ? $matches[1] : '0000');
-      $path = '/maps-and-records/webroot/images/Plan_Lib/RS/'.$yr.'/'.$r['rs_number'].'/';
+      $path = '/apps/maps-and-records/webroot/images/Plan_Lib/RS/'.$yr.'/'.$r['rs_number'].'/';
       if($handle = opendir($_SERVER['DOCUMENT_ROOT'].$path)){
         while (false !== ($filename = readdir($handle))){
           if(preg_match("/\.tiff?/i",$filename)){
@@ -152,21 +156,27 @@ class RS {
 
   # hash
   function get_rss($args){
-    $hash = $args['hash'];
-    if($hash['s']){$this->s = $hash['s'];}
-    if($hash['d']){$this->d = $hash['d'];}
+    $hash = (isset($args['hash']) ? $args['hash']:'');
+    $this->d = (isset($hash['d']) ? $hash['d']:$this->d);
+    $this->s = (isset($hash['s']) ? $hash['s']:$this->s);
     $search_fields = "CONCAT_WS(' ',rs.rs_number,rs.rs_description,rs.rs_plan_number)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
+    $if_book = '';
     if(isset($hash['b']) && $hash['b'] != "")
       $if_book = "rs_book = '$hash[b]' AND ";
+    $if_book_page = '';
     if(isset($hash['bp']) && $hash['bp'] != "")
       $if_book_page = "rs_page = '$hash[bp]' AND ";
+    $if_range = '';
     if(isset($hash['r']) && $hash['r'] != "")
       $if_range = "rs_range = '$hash[r]' AND ";
+    $if_section = '';
     if(isset($hash['sec']) && $hash['sec'] != "")
       $if_section = "rs_section = '$hash[sec]' AND ";
+    $if_township = '';
     if(isset($hash['t']) && $hash['t'] != "")
       $if_township = "rs_township = '$hash[t]' AND ";
     $sql = "
@@ -195,17 +205,23 @@ class RS {
 
   # hash
   function get_rss_count($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',rs.rs_number,rs.rs_description,rs.rs_plan_number)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
+    $if_book = '';
     if(isset($hash['b']) && $hash['b'] != "")
       $if_book = "rs_book = '$hash[b]' AND ";
+    $if_book_page = '';
     if(isset($hash['bp']) && $hash['bp'] != "")
       $if_book_page = "rs_page = '$hash[bp]' AND ";
+    $if_range = '';
     if(isset($hash['r']) && $hash['r'] != "")
       $if_range = "rs_range = '$hash[r]' AND ";
+    $if_section = '';
     if(isset($hash['sec']) && $hash['sec'] != "")
       $if_section = "rs_section = '$hash[sec]' AND ";
+    $if_township = '';
     if(isset($hash['t']) && $hash['t'] != "")
       $if_township = "rs_township = '$hash[t]' AND ";
     $sql = "
@@ -225,12 +241,13 @@ class RS {
 
   # hash
   function get_townships($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',rs.rs_township)";
-    $q = $hash['q'];
-    $hash['q'] = Common::clean_search_query($q,$search_fields);
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
+    $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
+    $if_scanned = '';
     if(isset($hash['c']) && $hash['c'] != "")
       $if_scanned = "Scanned = '$hash[c]' AND ";
     if(array_key_exists('plan_customer_id', $hash))

@@ -12,7 +12,7 @@ class TS {
 
   # user, hash
   function add_ts($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $hash['ts_due_date'] = date('Y-m-d',strtotime($hash['ts_due_date']));
     if(!$hash['ts_number']){
       $this->messages[] = "You did not enter in a TS #!";
@@ -26,7 +26,7 @@ class TS {
 
   # hash
   function get_streets_ew($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $sql = "
       SELECT DISTINCT ts_EW_street
       FROM tss ts
@@ -42,7 +42,7 @@ class TS {
 
   # hash
   function get_streets_ns($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $sql = "
       SELECT DISTINCT ts_NS_street
       FROM tss ts
@@ -87,8 +87,8 @@ class TS {
       preg_match("/^(\w+)-/i",$r['ts_image_id'],$matches);
       $tp = ($matches[1] ? $matches[1] : '');
       preg_match("/\w+-(\d+)-/i",$r['ts_image_id'],$matches);
-      $yr = ($matches[1] ? $matches[1] : '0000');
-      $path = '/maps-and-records/webroot/images/Plan_Lib/TSImage/'.$r['ts_image_id'].'/';
+      $yr = (isset($matches[1]) ? $matches[1] : '0000');
+      $path = '/apps/maps-and-records/webroot/images/Plan_Lib/TSImage/'.$r['ts_image_id'].'/';
       if($handle = opendir($_SERVER['DOCUMENT_ROOT'].$path)){
         while (false !== ($filename = readdir($handle))){
           if(preg_match("/\.tiff?/i",$filename)){
@@ -107,15 +107,18 @@ class TS {
 
   # hash
   function get_tss($args){
-    $hash = $args['hash'];
-    if($hash['s']){$this->s = $hash['s'];}
-    if($hash['d']){$this->d = $hash['d'];}
+    $hash = (isset($args['hash']) ? $args['hash']:'');
+    $this->d = (isset($hash['d']) ? $hash['d']:$this->d);
+    $this->s = (isset($hash['s']) ? $hash['s']:$this->s);
     $search_fields = "CONCAT_WS(' ',ts.ts_number,CONCAT(ts.ts_type,'-',LPAD(ts.ts_system_id,4,'0')),ts.ts_plan_number,ts.ts_EW_street,ts.ts_NS_street,ts.ts_comments)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
+    $if_ew = '';
     if(isset($hash['ew']) && $hash['ew'] != "")
       $if_ew = "ts_EW_street = '$hash[ew]' AND ";
+    $if_ns = '';
     if(isset($hash['ns']) && $hash['ns'] != "")
       $if_ns = "ts_NS_street = '$hash[ns]' AND ";
  #CONCAT(ts_type,'-',IF(LENGTH(ts_system_id)=4,ts_system_id),IF(LENGTH(ts_system_id)=3,'0',ts_system_id),IF(LENGTH(ts_system_id)=2,'00',ts_system_id),IF(LENGTH(ts_system_id)=1,'000',ts_system_id,'0000')) AS ts_number_id
@@ -153,11 +156,14 @@ class TS {
 
   # hash
   function get_tss_count($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',ts.ts_number,ts.ts_plan_number,ts.ts_EW_street,ts.ts_NS_street,ts.ts_comments)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
+    $if_ew = '';
     if(isset($hash['ew']) && $hash['ew'] != "")
       $if_ew = "ts_EW_street = '$hash[ew]' AND ";
+    $if_ns = '';
     if(isset($hash['ns']) && $hash['ns'] != "")
       $if_ns = "ts_NS_street = '$hash[ns]' AND ";
     $sql = "
@@ -175,7 +181,7 @@ class TS {
   # id, hash
   function update_ts($args){
     $id = $args['id'];
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $hash['ts_due_date'] = date('Y-m-d',strtotime($hash['ts_due_date']));
     $item = $this->get_ts(array('id' => $id));
     $where = "ts_id = '$id'";

@@ -11,7 +11,7 @@ class Plans {
 
   # user, hash
   function add_plan($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
     $hash['plan_added_by'] = $user_name;
     if(!$hash['plan_number']){
@@ -55,7 +55,7 @@ class Plans {
     } else {
       $where = "WHERE plan_number = '$id' ";
     }
-    $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
+    $user_name = (isset($args['user_name']) ? $args['user_name'] : $args['user']['user_name']);
     $sql = "
       SELECT p.*
       FROM plans p
@@ -76,18 +76,18 @@ class Plans {
       $tp = ($matches[1] ? $matches[1] : '');
       preg_match("/\w+-(\d+)-/i",$r['plan_number'],$matches);
       $yr = ($matches[1] ? $matches[1] : '0000');
-      $paths = array('/maps-and-records/webroot/images/Plan_Lib/'.$tp.'/'.$r['plan_number'].'/',
-                     '/maps-and-records/webroot/images/Plan_Lib/0000/'.$tp.'/'.$r['plan_number'].'/',
-                     '/maps-and-records/webroot/images/Plan_Lib/0100/'.$tp.'/'.$r['plan_number'].'/',
-                     '/maps-and-records/webroot/images/Plan_Lib/0200/'.$tp.'/'.$r['plan_number'].'/',
-                     '/maps-and-records/webroot/images/Plan_Lib/0300/'.$tp.'/'.$r['plan_number'].'/',
-                     '/maps-and-records/webroot/images/Plan_Lib/0400/'.$tp.'/'.$r['plan_number'].'/',
-                     '/maps-and-records/webroot/images/Plan_Lib/0500/'.$tp.'/'.$r['plan_number'].'/',
-                     '/maps-and-records/webroot/images/Plan_Lib/0600/'.$tp.'/'.$r['plan_number'].'/',
-                     '/maps-and-records/webroot/images/Plan_Lib/0700/'.$tp.'/'.$r['plan_number'].'/',
-                     '/maps-and-records/webroot/images/Plan_Lib/0800/'.$tp.'/'.$r['plan_number'].'/',
-                     '/maps-and-records/webroot/images/Plan_Lib/'.$yr.'/'.$tp.'/'.$r['plan_number'].'/',
-                     '/maps-and-records/webroot/images/Plan_Lib/19'.$yr.'/'.$tp.'/'.$r['plan_number'].'/');
+      $paths = array('/apps/maps-and-records/webroot/images/Plan_Lib/'.$tp.'/'.$r['plan_number'].'/',
+                     '/apps/maps-and-records/webroot/images/Plan_Lib/0000/'.$tp.'/'.$r['plan_number'].'/',
+                     '/apps/maps-and-records/webroot/images/Plan_Lib/0100/'.$tp.'/'.$r['plan_number'].'/',
+                     '/apps/maps-and-records/webroot/images/Plan_Lib/0200/'.$tp.'/'.$r['plan_number'].'/',
+                     '/apps/maps-and-records/webroot/images/Plan_Lib/0300/'.$tp.'/'.$r['plan_number'].'/',
+                     '/apps/maps-and-records/webroot/images/Plan_Lib/0400/'.$tp.'/'.$r['plan_number'].'/',
+                     '/apps/maps-and-records/webroot/images/Plan_Lib/0500/'.$tp.'/'.$r['plan_number'].'/',
+                     '/apps/maps-and-records/webroot/images/Plan_Lib/0600/'.$tp.'/'.$r['plan_number'].'/',
+                     '/apps/maps-and-records/webroot/images/Plan_Lib/0700/'.$tp.'/'.$r['plan_number'].'/',
+                     '/apps/maps-and-records/webroot/images/Plan_Lib/0800/'.$tp.'/'.$r['plan_number'].'/',
+                     '/apps/maps-and-records/webroot/images/Plan_Lib/'.$yr.'/'.$tp.'/'.$r['plan_number'].'/',
+                     '/apps/maps-and-records/webroot/images/Plan_Lib/19'.$yr.'/'.$tp.'/'.$r['plan_number'].'/');
       foreach ($paths as $path){
       if($handle = opendir($_SERVER['DOCUMENT_ROOT'].$path)){
         while (false !== ($filename = readdir($handle))){
@@ -108,16 +108,18 @@ class Plans {
 
   # hash
   function get_plans($args){
-    $hash = $args['hash'];
-    if($hash['s']){$this->s = $hash['s'];}
-    if($hash['d']){$this->d = $hash['d'];}
+    $hash = (isset($args['hash']) ? $args['hash']:'');
+    $this->d = (isset($hash['d']) ? $hash['d']:$this->d);
+    $this->s = (isset($hash['s']) ? $hash['s']:$this->s);
     $search_fields = "CONCAT_WS(' ',p.plan_number,p.plan_description)";
-    $q = $hash['q'];
-    $hash['q'] = Common::clean_search_query($q,$search_fields);
-    $ipp = (isset($args['ipp']) ? $args['ipp'] : "250");
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
+    $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
+    $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
+    $if_scanned = '';
     if(isset($hash['c']) && $hash['c'] != "")
       $if_scanned = "plan_scanned = '$hash[c]' AND ";
+    $if_type = '';
     if(isset($hash['t']) && $hash['t'] != "")
       $if_type = "plan_number LIKE '$hash[t]-%' AND ";
     $sql = "
@@ -146,10 +148,13 @@ class Plans {
     $hash = $args['hash'];
     $search_fields = "CONCAT_WS(' ',p.plan_number,p.plan_description)";
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
+    $if_scanned = '';
     if(isset($hash['c']) && $hash['c'] != "")
       $if_scanned = "plan_scanned = '$hash[c]' AND ";
+    $if_type = '';
     if(isset($hash['t']) && $hash['t'] != "")
       $if_type = "plan_number LIKE '$hash[t]-%' AND ";
+    $if_customer_id = '';
     if(array_key_exists('plan_customer_id', $hash))
       $if_customer_id = "plan_customer_id = '$hash[plan_customer_id]' AND ";
     $sql = "
@@ -167,10 +172,10 @@ class Plans {
 
   # hash
   function get_plan_types($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',pt.type_name)";
-    $q = $hash['q'];
-    $hash['q'] = Common::clean_search_query($q,$search_fields);
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
+    $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
     if(isset($hash['c']) && $hash['c'] != "")

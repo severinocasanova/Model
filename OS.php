@@ -15,7 +15,7 @@ class OS {
 
   # user, hash
   function add_os($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $hash['os_OSDATE'] = date('Y-m-d',strtotime($hash['os_OSDATE']));
     if(!$hash['os_township']){
       $this->messages[] = "You did not enter in a Township!";
@@ -29,8 +29,9 @@ class OS {
 
   # hash
   function get_books($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',os.os_book)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT os_book
@@ -49,8 +50,9 @@ class OS {
 
   # hash
   function get_book_pages($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',os.os_page)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT os_page
@@ -69,8 +71,9 @@ class OS {
 
   # hash
   function get_ranges($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',os.os_range)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT os_range
@@ -89,8 +92,9 @@ class OS {
 
   # hash
   function get_sections($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',os.os_section)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT os_section
@@ -109,8 +113,9 @@ class OS {
 
   # hash
   function get_surveyors($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',os.os_surveyor)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT os_surveyor
@@ -140,7 +145,7 @@ class OS {
     if($r){
       $r['os_url'] = Common::get_url(array('bow' => $r['os_description'],
                                            'id' => 'OS'.$r['os_id']));
-      $path = '/maps-and-records/webroot/images/Survey/FieldBook/'.$r['os_book'].'/';
+      $path = '/apps/maps-and-records/webroot/images/Survey/FieldBook/'.$r['os_book'].'/';
       if($handle = opendir($_SERVER['DOCUMENT_ROOT'].$path)){
         while (false !== ($filename = readdir($handle))){
           if(preg_match("/\.tiff?/i",$filename)){
@@ -159,19 +164,24 @@ class OS {
 
   # hash
   function get_oss($args){
-    $hash = $args['hash'];
-    if($hash['s']){$this->s = $hash['s'];}
-    if($hash['d']){$this->d = $hash['d'];}
+    $hash = (isset($args['hash']) ? $args['hash']:'');
+    $this->d = (isset($hash['d']) ? $hash['d']:$this->d);
+    $this->s = (isset($hash['s']) ? $hash['s']:$this->s);
     $search_fields = "CONCAT_WS(' ',o.os_description)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
+    $if_range = '';
     if(isset($hash['r']) && $hash['r'] != "")
       $if_range = "os_range = '$hash[r]' AND ";
+    $if_section = '';
     if(isset($hash['sec']) && $hash['sec'] != "")
       $if_section = "os_section = '$hash[sec]' AND ";
+    $if_surveyor = '';
     if(isset($hash['fs']) && $hash['fs'] != "")
       $if_surveyor = "os_surveyor = '$hash[fs]' AND ";
+    $if_township = '';
     if(isset($hash['t']) && $hash['t'] != "")
       $if_township = "os_township = '$hash[t]' AND ";
     $sql = "
@@ -199,13 +209,17 @@ class OS {
 
   # hash
   function get_oss_count($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',o.os_description)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
+    $if_range = '';
     if(isset($hash['r']) && $hash['r'] != "")
       $if_range = "os_range = '$hash[r]' AND ";
+    $if_section = '';
     if(isset($hash['sec']) && $hash['sec'] != "")
       $if_section = "os_section = '$hash[sec]' AND ";
+    $if_township = '';
     if(isset($hash['t']) && $hash['t'] != "")
       $if_township = "os_township = '$hash[t]' AND ";
     $sql = "
@@ -223,10 +237,10 @@ class OS {
 
   # hash
   function get_townships($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',os.os_township)";
-    $q = $hash['q'];
-    $hash['q'] = Common::clean_search_query($q,$search_fields);
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
+    $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
     $sql = "
@@ -247,7 +261,7 @@ class OS {
   # id, hash
   function update_os($args){
     $id = $args['id'];
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $hash['os_due_date'] = date('Y-m-d',strtotime($hash['os_due_date']));
     $item = $this->get_os(array('id' => $id));
     $where = "os_id = '$id'";

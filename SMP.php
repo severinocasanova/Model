@@ -14,12 +14,13 @@ class SMP {
 
   # user, hash
   function add_smp($args){
-    $hash = $args['hash'];
-    $hash['smp_due_date'] = date('Y-m-d',strtotime($hash['smp_due_date']));
-    if(!$hash['smp_customer_id']){
-      $this->messages[] = "You did not enter in a customer!";
+    $hash = (isset($args['hash']) ? $args['hash']:'');
+    $hash['PlanAddedBy'] = $args['user']['user_name'];
+    $hash['WhenAddedDate'] = date("Y-m-d H:i:s");
+    if(!$hash['smp_number']){
+      $this->messages[] = "You did not enter in an MP #!";
     } else {
-      $id = database::insert(array('table' => 'smps', 'hash' => $hash));
+      $id = Database::insert(array('table' => 'smps', 'hash' => $hash));
       if($id)
         $this->messages[] = "You have successfully added an smp!";
       return $id;
@@ -28,8 +29,9 @@ class SMP {
 
   # hash
   function get_books($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',smp.smp_book)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT smp_book
@@ -48,8 +50,9 @@ class SMP {
 
   # hash
   function get_book_pages($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',smp.smp_page)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT smp_page
@@ -68,8 +71,9 @@ class SMP {
 
   # hash
   function get_ranges($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',smp.smp_range)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT smp_range
@@ -88,8 +92,9 @@ class SMP {
 
   # hash
   function get_sections($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',smp.smp_section)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT smp_section
@@ -130,11 +135,13 @@ class SMP {
       #/images/Plan_Lib/2007/GR/GR-2007-146/GR-2007-146_001.tif
       #$r['files'] = array('file1.tif');
       #$path = $_SERVER['DOCUMENT_ROOT'].'maps-and-records/webroot/images/Plan_Lib/2013/H/H-2013-001/';
+      #webroot/images/Plan_Lib/MP/02/MP-02-041/MP-02-041_001.tif
       preg_match("/^(\w+)-/i",$r['smp_number'],$matches);
       $tp = ($matches[1] ? $matches[1] : '');
       preg_match("/\w+-(\d+)-/i",$r['smp_number'],$matches);
       $yr = ($matches[1] ? $matches[1] : '0000');
-      $path = '/maps-and-records/webroot/images/Plan_Lib/'.$tp.'/'.$yr.'/'.$r['smp_number'].'/';
+      $path = '/apps/maps-and-records/webroot/images/Plan_Lib/'.$tp.'/'.$yr.'/'.$r['smp_number'].'/';
+      #print "path:".$path;
       if($handle = opendir($_SERVER['DOCUMENT_ROOT'].$path)){
         while (false !== ($filename = readdir($handle))){
           if(preg_match("/(\.jpg|\.gif|\.tiff?|\.png)/i",$filename)){
@@ -153,21 +160,27 @@ class SMP {
 
   # hash
   function get_smps($args){
-    $hash = $args['hash'];
-    if($hash['s']){$this->s = $hash['s'];}
-    if($hash['d']){$this->d = $hash['d'];}
+    $hash = (isset($args['hash']) ? $args['hash']:'');
+    $this->d = (isset($hash['d']) ? $hash['d']:$this->d);
+    $this->s = (isset($hash['s']) ? $hash['s']:$this->s);
     $search_fields = "CONCAT_WS(' ',s.smp_number,s.smp_description,s.smp_plan_number)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
+    $if_book = '';
     if(isset($hash['b']) && $hash['b'] != "")
       $if_book = "smp_book = '$hash[b]' AND ";
+    $if_book_page = '';
     if(isset($hash['bp']) && $hash['bp'] != "")
       $if_book_page = "smp_page = '$hash[bp]' AND ";
+    $if_range = '';
     if(isset($hash['r']) && $hash['r'] != "")
       $if_range = "smp_range = '$hash[r]' AND ";
+    $if_section = '';
     if(isset($hash['sec']) && $hash['sec'] != "")
       $if_section = "smp_section = '$hash[sec]' AND ";
+    $if_township = '';
     if(isset($hash['t']) && $hash['t'] != "")
       $if_township = "smp_township = '$hash[t]' AND ";
     $sql = "
@@ -196,17 +209,23 @@ class SMP {
 
   # hash
   function get_smps_count($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',s.smp_number,s.smp_description,s.smp_plan_number)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
+    $if_book = '';
     if(isset($hash['b']) && $hash['b'] != "")
       $if_book = "smp_book = '$hash[b]' AND ";
+    $if_book_page = '';
     if(isset($hash['bp']) && $hash['bp'] != "")
       $if_book_page = "smp_page = '$hash[bp]' AND ";
+    $if_range = '';
     if(isset($hash['r']) && $hash['r'] != "")
       $if_range = "smp_range = '$hash[r]' AND ";
+    $if_section = '';
     if(isset($hash['sec']) && $hash['sec'] != "")
       $if_section = "smp_section = '$hash[sec]' AND ";
+    $if_township = '';
     if(isset($hash['t']) && $hash['t'] != "")
       $if_township = "smp_township = '$hash[t]' AND ";
     $sql = "
@@ -226,10 +245,10 @@ class SMP {
 
   # hash
   function get_townships($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',smp.smp_township)";
-    $q = $hash['q'];
-    $hash['q'] = Common::clean_search_query($q,$search_fields);
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
+    $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
     $sql = "

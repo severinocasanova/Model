@@ -14,7 +14,7 @@ class MS {
 
   # user, hash
   function add_ms($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     if(!$hash['ms_number']){
       $this->messages[] = "You did not enter in an MS #!";
     } else {
@@ -27,8 +27,9 @@ class MS {
 
   # hash
   function get_books($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',ms.ms_book)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT ms_book
@@ -47,8 +48,9 @@ class MS {
 
   # hash
   function get_book_pages($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',ms.ms_page)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT ms_page
@@ -67,8 +69,9 @@ class MS {
 
   # hash
   function get_ranges($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',ms.ms_range)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT ms_range
@@ -87,8 +90,9 @@ class MS {
 
   # hash
   function get_sections($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',ms.ms_section)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT ms_section
@@ -108,7 +112,6 @@ class MS {
   # id
   function get_ms($args){
     $id = $args['id'];
-    $user_name = ($args['user_name'] ? $args['user_name'] : $args['user']['user_name']);
     $sql = "
       SELECT ms.*
       FROM mss ms
@@ -128,7 +131,7 @@ class MS {
       $tp = ($matches[1] ? $matches[1] : '');
       preg_match("/\w+-(\d+)-/i",$r['ms_number'],$matches);
       $yr = ($matches[1] ? $matches[1] : '0000');
-      $path = '/maps-and-records/webroot/images/Plan_Lib/MS/'.$yr.'/'.$r['ms_number'].'/';
+      $path = '/apps/maps-and-records/webroot/images/Plan_Lib/MS/'.$yr.'/'.$r['ms_number'].'/';
       if($handle = opendir($_SERVER['DOCUMENT_ROOT'].$path)){
         while (false !== ($filename = readdir($handle))){
           if(preg_match("/\.tiff?/i",$filename)){
@@ -147,21 +150,27 @@ class MS {
 
   # hash
   function get_mss($args){
-    $hash = $args['hash'];
-    if($hash['s']){$this->s = $hash['s'];}
-    if($hash['d']){$this->d = $hash['d'];}
+    $hash = (isset($args['hash']) ? $args['hash']:'');
+    $this->d = (isset($hash['d']) ? $hash['d']:$this->d);
+    $this->s = (isset($hash['s']) ? $hash['s']:$this->s);
     $search_fields = "CONCAT_WS(' ',ms.ms_number,ms.ms_description,ms.ms_plan_number)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
+    $if_book = '';
     if(isset($hash['b']) && $hash['b'] != "")
       $if_book = "ms_book = '$hash[b]' AND ";
+    $if_book_page = '';
     if(isset($hash['bp']) && $hash['bp'] != "")
       $if_book_page = "ms_page = '$hash[bp]' AND ";
+    $if_range = '';
     if(isset($hash['r']) && $hash['r'] != "")
       $if_range = "ms_range = '$hash[r]' AND ";
+    $if_section = '';
     if(isset($hash['sec']) && $hash['sec'] != "")
       $if_section = "ms_section = '$hash[sec]' AND ";
+    $if_township = '';
     if(isset($hash['t']) && $hash['t'] != "")
       $if_township = "ms_township = '$hash[t]' AND ";
     $sql = "
@@ -192,15 +201,21 @@ class MS {
   function get_mss_count($args){
     $hash = $args['hash'];
     $search_fields = "CONCAT_WS(' ',ms.ms_number,ms.ms_description,ms.ms_plan_number)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
+    $if_book = '';
     if(isset($hash['b']) && $hash['b'] != "")
       $if_book = "ms_book = '$hash[b]' AND ";
+    $if_book_page = '';
     if(isset($hash['bp']) && $hash['bp'] != "")
       $if_book_page = "ms_page = '$hash[bp]' AND ";
+    $if_range = '';
     if(isset($hash['r']) && $hash['r'] != "")
       $if_range = "ms_range = '$hash[r]' AND ";
+    $if_section = '';
     if(isset($hash['sec']) && $hash['sec'] != "")
       $if_section = "ms_section = '$hash[sec]' AND ";
+    $if_township = '';
     if(isset($hash['t']) && $hash['t'] != "")
       $if_township = "ms_township = '$hash[t]' AND ";
     $sql = "
@@ -220,10 +235,10 @@ class MS {
 
   # hash
   function get_townships($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',ms.ms_township)";
-    $q = $hash['q'];
-    $hash['q'] = Common::clean_search_query($q,$search_fields);
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
+    $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
     if(isset($hash['c']) && $hash['c'] != "")
@@ -246,7 +261,7 @@ class MS {
   # id, hash
   function update_ms($args){
     $id = $args['id'];
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $hash['ms_due_date'] = date('Y-m-d',strtotime($hash['ms_due_date']));
     $item = $this->get_ms(array('id' => $id));
     $where = "ms_id = '$id'";

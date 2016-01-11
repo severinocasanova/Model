@@ -14,22 +14,27 @@ class Annexations {
 
   # user, hash
   function add_annexation($args){
-    $hash = $args['hash'];
-    $hash['annexation_effective_date'] = date('Y-m-d',strtotime($hash['annexation_due_date']));
+    $hash = (isset($args['hash']) ? $args['hash']:'');
+    $hash['annexation_effective_date'] = date('Y-m-d',strtotime($hash['annexation_effective_date']));
+    $hash['annexation_annex'] = '1';
+    $hash['PlanAddedBy'] = $args['user']['user_name'];
+    $hash['WhenAddedDate'] = date("Y-m-d H:i:s");
     if(!$hash['annexation_map_index']){
       $this->messages[] = "You did not enter in a map index!";
     } else {
       $id = Database::insert(array('table' => 'annexations', 'hash' => $hash));
-      if($id)
+      if($id){
         $this->messages[] = "You have successfully added an annexation record!";
-      return $id;
+        return $id;
+      }
     }
   }
 
   # hash
   function get_books($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',annexation.annexation_book)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT annexation_book
@@ -48,8 +53,9 @@ class Annexations {
 
   # hash
   function get_book_pages($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',annexation.annexation_page)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT annexation_page
@@ -68,8 +74,9 @@ class Annexations {
 
   # hash
   function get_ranges($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',annexation.annexation_range)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT annexation_range
@@ -88,8 +95,9 @@ class Annexations {
 
   # hash
   function get_sections($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',annexation.annexation_section)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT annexation_section
@@ -138,15 +146,18 @@ class Annexations {
 
   # hash
   function get_annexations($args){
-    $hash = $args['hash'];
-    if($hash['s']){$this->s = $hash['s'];}
-    if($hash['d']){$this->d = $hash['d'];}
+    $hash = (isset($args['hash']) ? $args['hash']:'');
+    $this->d = (isset($hash['d']) ? $hash['d']:$this->d);
+    $this->s = (isset($hash['s']) ? $hash['s']:$this->s);
     $search_fields = "CONCAT_WS(' ',a.annexation_map_index,a.annexation_description,a.annexation_plan_number,a.annexation_effective_date,a.annexation_order_number)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
+    $if_book = '';
     if(isset($hash['b']) && $hash['b'] != "")
       $if_book = "annexation_book = '$hash[b]' AND ";
+    $if_book_page = '';
     if(isset($hash['bp']) && $hash['bp'] != "")
       $if_book_page = "annexation_page = '$hash[bp]' AND ";
     $sql = "
@@ -185,7 +196,7 @@ class Annexations {
     while ($r = mysql_fetch_assoc($results)){
       $annexation_total_sq_miles += $r['annexation_sq_miles'];
       $r['annexation_total_sq_miles'] = $annexation_total_sq_miles;
-      $items[$r[annexation_id]] = $r;
+      $items[$r['annexation_id']] = $r;
     }
     if($items)
       $this->annexations_total_sq_miles = $items;
@@ -194,11 +205,14 @@ class Annexations {
 
   # hash
   function get_annexations_count($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',a.annexation_map_index,a.annexation_description,a.annexation_plan_number,a.annexation_effective_date,a.annexation_order_number)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
+    $if_book = '';
     if(isset($hash['b']) && $hash['b'] != "")
       $if_book = "annexation_book = '$hash[b]' AND ";
+    $if_book_page = '';
     if(isset($hash['bp']) && $hash['bp'] != "")
       $if_book_page = "annexation_page = '$hash[bp]' AND ";
     $sql = "
@@ -216,7 +230,7 @@ class Annexations {
   # id, hash
   function update_annexation($args){
     $id = $args['id'];
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $hash['annexation_due_date'] = date('Y-m-d',strtotime($hash['annexation_due_date']));
     $item = $this->get_annexation(array('id' => $id));
     $where = "annexation_id = '$id'";

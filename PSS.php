@@ -14,7 +14,7 @@ class PSS {
 
   # user, hash
   function add_pss($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     if(!$hash['pss_direction']){
       $this->messages[] = "You did not enter in a direction!";
     } else {
@@ -49,8 +49,9 @@ class PSS {
 
   # hash
   function get_ranges($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',pss.Rng)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT Rng
@@ -69,8 +70,9 @@ class PSS {
 
   # hash
   function get_sections($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',pss.Sec)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $sql = "
       SELECT DISTINCT Sec
@@ -120,8 +122,8 @@ class PSS {
       preg_match("/^(\w+)-/i",$r['pss_number'],$matches);
       $tp = ($matches[1] ? $matches[1] : '');
       preg_match("/\w+-(\d+)-/i",$r['pss_number'],$matches);
-      $yr = ($matches[1] ? $matches[1] : '0000');
-      $path = '/maps-and-records/webroot/images/Plan_Lib/PSImages/'.$r['pss_number'].'/';
+      $yr = (isset($matches[1]) ? $matches[1] : '0000');
+      $path = '/apps/maps-and-records/webroot/images/Plan_Lib/PSImages/'.$r['pss_number'].'/';
       if($handle = opendir($_SERVER['DOCUMENT_ROOT'].$path)){
         while (false !== ($filename = readdir($handle))){
           if(preg_match("/\.tiff?/i",$filename)){
@@ -140,13 +142,15 @@ class PSS {
 
   # hash
   function get_psss($args){
-    $hash = $args['hash'];
-    if($hash['s']){$this->s = $hash['s'];}
-    if($hash['d']){$this->d = $hash['d'];}
+    $hash = (isset($args['hash']) ? $args['hash']:'');
+    $this->d = (isset($hash['d']) ? $hash['d']:$this->d);
+    $this->s = (isset($hash['s']) ? $hash['s']:$this->s);
     $search_fields = "CONCAT_WS(' ',pss.pss_number,pss.pss_description,pss.pss_TEPlanIDNum)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
     $ipp = (isset($args['ipp']) ? $args['ipp'] : "100");
     $offset = (isset($args['offset']) ? "LIMIT $args[offset],$ipp" : "LIMIT 0,$ipp");
+    $if_scanned = '';
     if(isset($hash['c']) && $hash['c'] != "")
       $if_scanned = "pss_scanned = '$hash[c]' AND ";
     $sql = "
@@ -180,9 +184,11 @@ class PSS {
 
   # hash
   function get_psss_count($args){
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $search_fields = "CONCAT_WS(' ',pss.pss_number,pss.pss_description,pss.pss_TEPlanIDNum)";
+    $hash['q'] = (isset($hash['q']) ? $hash['q']:'');
     $hash['q'] = Common::clean_search_query($hash['q'],$search_fields);
+    $if_scanned = '';
     if(isset($hash['c']) && $hash['c'] != "")
       $if_scanned = "PSSScanned = '$hash[c]' AND ";
     $sql = "
@@ -199,7 +205,7 @@ class PSS {
   # id, hash
   function update_pss($args){
     $id = $args['id'];
-    $hash = $args['hash'];
+    $hash = (isset($args['hash']) ? $args['hash']:'');
     $hash['pss_due_date'] = date('Y-m-d',strtotime($hash['pss_due_date']));
     $item = $this->get_pss(array('id' => $id));
     $where = "pss_id = '$id'";
