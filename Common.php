@@ -1,5 +1,5 @@
 <?php
-
+App::uses('CakeEmail', 'Network/Email');
 class Common {
   var $messages = array();
 
@@ -89,6 +89,7 @@ class Common {
                    'FBV' => '/fb-viewer/',
                    'H' => '/healthcare/',
                    'HR' => '/residents/',
+                   'IN' => '/instances/',
                    'M' => '/movies/',
                    'MS' => '/ms/',
                    'MSV' => '/ms-viewer/',
